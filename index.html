@@ -289,8 +289,12 @@
     <script>
         // Функция для быстрого сохранения ученика (с опытом)
         async function quickSaveStudent(studentData) {
+            console.log("=== quickSaveStudent вызвана ===");
+            console.log("Данные для сохранения:", studentData);
+            
             // Сохраняем в localStorage
             localStorage.setItem('currentStudent', JSON.stringify(studentData));
+            console.log("Данные сохранены в localStorage");
             
             // Отправляем на сервер
             try {
@@ -308,7 +312,9 @@
                     lastLogin: new Date().toISOString()
                 };
         
-                const response = await fetch('https://script.google.com/macros/s/ВАШ_НОВЫЙ_SCRIPT_ID/exec', {
+                console.log("Отправляю данные на сервер:", dataToSend);
+                
+                const response = await fetch('https://script.google.com/macros/s/AKfycbyq9uwxwf69CVyyBvBGMRkgthzTCdgGRCIlXctOGJosU4kve2wUUQH-m0W2O2ES222t/exec', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain;charset=utf-8',
@@ -316,21 +322,15 @@
                     body: JSON.stringify(dataToSend)
                 });
                 
+                console.log("Получен ответ от сервера");
                 const result = await response.text();
-                console.log('Данные отправлены на сервер:', result);
-                
-                // Проверяем результат
-                try {
-                    const jsonResult = JSON.parse(result);
-                    console.log('Результат в JSON:', jsonResult);
-                } catch(e) {
-                    console.log('Ответ не в JSON формате:', result);
-                }
+                console.log("Текст ответа:", result);
                 
             } catch (e) {
-                console.log('Ошибка при отправке данных:', e);
+                console.error("Ошибка при отправке данных:", e);
             }
         
+            console.log("=== quickSaveStudent завершена ===");
             return true;
         }
 
@@ -345,7 +345,8 @@
             const subgroup = document.getElementById('subgroup').value;
             const errorMessage = document.getElementById('errorMessage');
             const successMessage = document.getElementById('successMessage');
-
+            console.log("Данные формы:", {firstName, lastName, grade, classLetter, subgroup});
+            
             if (!firstName || !lastName || !grade || !classLetter || !subgroup) {
                 errorMessage.textContent = 'Пожалуйста, заполните все поля';
                 errorMessage.style.display = 'block';
