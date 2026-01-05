@@ -445,7 +445,7 @@ async function saveProgressToGoogleSheets(action = 'update') {
                     subgroup: studentData.subgroup,
                     currentPart: LESSON_NUMBER,
                     currentLevel: studentData.currentLevel || 0,
-                    experience: studentData.totalExperience,  // ← ОТПРАВЛЯЕМ ОПЫТ
+                    experience: totalExperience,  // ← ОТПРАВЛЯЕМ ОПЫТ
                     lastLogin: new Date().toISOString()
                 };
 
