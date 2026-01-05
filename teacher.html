@@ -602,14 +602,14 @@
             const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
 
             filteredStudents = allStudents.filter(student => {
-                // Фильтр по классу
-                if (gradeFilter && student.grade !== gradeFilter) return false;
+                // Фильтр по классу (приводим к строке для сравнения)
+                if (gradeFilter && String(student.grade) !== gradeFilter) return false;
 
                 // Фильтр по букве класса
                 if (classLetterFilter && student.classLetter !== classLetterFilter) return false;
 
-                // Фильтр по подгруппе
-                if (subgroupFilter && student.subgroup !== subgroupFilter) return false;
+                // Фильтр по подгруппе (приводим к строке для сравнения)
+                if (subgroupFilter && String(student.subgroup) !== subgroupFilter) return false;
 
                 // Фильтр по фамилии
                 if (searchFilter && !student.lastName.toLowerCase().includes(searchFilter)) return false;
