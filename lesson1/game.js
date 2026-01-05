@@ -449,7 +449,7 @@ async function saveProgressToGoogleSheets(action = 'update') {
                     lastLogin: new Date().toISOString()
                 };
 
-                fetch('https://script.google.com/macros/s/AKfycbyq9uwxwf69CVyyBvBGMRkgthzTCdgGRCIlXctOGJosU4kve2wUUQH-m0W2O2ES222t/exec', {
+                fetch('https://script.google.com/macros/s/AKfycbwZkEot5UHuM8xFbEE3n9qcF6wyOXSuQqVgVeuc4dx7WYbAoiXmunZY0UQTmzlKlBWU/exec', {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: {
