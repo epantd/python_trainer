@@ -291,37 +291,38 @@
         async function quickSaveStudent(studentData) {
             // Сохраняем в localStorage
             localStorage.setItem('currentStudent', JSON.stringify(studentData));
-
+            
             // Отправляем на сервер
-            setTimeout(() => {
-                try {
-                    const dataToSend = {
-                        action: 'save',
-                        password: SCRIPT_PASSWORD,
-                        firstName: studentData.firstName,
-                        lastName: studentData.lastName,
-                        grade: studentData.grade,
-                        classLetter: studentData.classLetter,
-                        subgroup: studentData.subgroup,
-                        currentPart: currentData.currentPart, // ← Начинаем с урока 1
-                        currentLevel: 0,
-                        experience: 0,
-                        lastLogin: new Date().toISOString()
-                    };
-
-                    fetch(API_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(dataToSend)
-                    });
-                } catch (e) {
-                    console.log('Фоновое сохранение не удалось');
-                }
-            }, 100);
-
+            try {
+                const dataToSend = {
+                    action: 'save',
+                    password: 'teacher123',
+                    firstName: studentData.firstName,
+                    lastName: studentData.lastName,
+                    grade: studentData.grade,
+                    classLetter: studentData.classLetter,
+                    subgroup: studentData.subgroup,
+                    currentPart: 1,
+                    currentLevel: 0,
+                    experience: 0,
+                    lastLogin: new Date().toISOString()
+                };
+        
+                const response = await fetch('https://script.google.com/macros/s/AKfycbwF5BhsgiI-XjQpn8lJVGA7Ntk0Bwx-L0gmRETiwbAslh2HhqFsPdMS1NUz4ptEIy4h/exec', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify(dataToSend)
+                });
+                
+                const result = await response.text();
+                console.log('Данные отправлены на сервер:', result);
+                
+            } catch (e) {
+                console.log('Фоновое сохранение не удалось:', e);
+            }
+        
             return true;
         }
 
