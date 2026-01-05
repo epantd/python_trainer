@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню Занятий по Python</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .logo {
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #3498db;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .lesson-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .lesson-item {
+            margin-bottom: 15px;
+        }
+
+        .lesson-btn {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: left;
+            position: relative;
+        }
+
+        .lesson-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .lesson-btn:active {
+            transform: translateY(0);
+        }
+
+        .disabled {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+            cursor: not-allowed !important;
+            opacity: 0.7;
+        }
+
+        .disabled:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .teacher-link {
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .teacher-link a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .teacher-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>Тренажер "Основы Python"</h1>
+            <p>8 класс</p>
+        </div>
+
+        <ul class="lesson-list">
+            <li class="lesson-item">
+                <a href="lesson1/index.html" class="lesson-btn">
+                    Занятие 1: Переменные. Оператор присваивания
+                </a>
+            </li>
+
+            <li class="lesson-item">
+                <a href="lesson2/index.html" class="lesson-btn">
+                    Занятие 2: Программирование линейных алгоритмов
+                </a>
+            </li>
+            
+            <li class="lesson-item">
+                <a href="lesson3/index.html" class="lesson-btn">
+                    Занятие 3: Разработка программ, содержащих оператор ветвления
+                </a>
+            </li>
+            
+            <li class="lesson-item">
+                <a href="lesson4/index.html" class="lesson-btn">
+                    Занятие 4: Цикл с условием
+                </a>
+            </li>
+            
+            <li class="lesson-item">
+                <a href="lesson5/index.html" class="lesson-btn">
+                    Занятие 5: Цикл с переменной 
+                </a>
+            </li>
+            
+            <li class="lesson-item">
+                <a href="lesson6/index.html" class="lesson-btn">
+                    Занятие 6: Решение задач по пройденному материалу 
+                </a>
+            </li>
+        </ul>
+
+        <div class="teacher-link">
+            <a href="index.html">← Вернуться к входу</a>
+        </div>
+    </div>
+</body>
+</html>

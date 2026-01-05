@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Уроки Python 8-9 классы</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #3498db;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background-color: white;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .teacher-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .teacher-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #fdf2f2;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .success-message {
+            color: #27ae60;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f2f9f2;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-row .input-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .password-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .password-input-group {
+            margin-bottom: 20px;
+        }
+
+        .password-input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-submit {
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>Уроки Python</h1>
+            <p>8-9 классы</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-row">
+                <div class="input-group">
+                    <label for="firstName">Имя:</label>
+                    <input type="text" id="firstName" required placeholder="Введите ваше имя">
+                </div>
+
+                <div class="input-group">
+                    <label for="lastName">Фамилия:</label>
+                    <input type="text" id="lastName" required placeholder="Введите вашу фамилию">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label for="grade">Класс:</label>
+                    <select id="grade" required>
+                        <option value="">Выберите класс</option>
+                        <option value="8">8 класс</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="classLetter">Буква класса:</label>
+                    <select id="classLetter" required>
+                        <option value="">Выберите букву</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label for="subgroup">Подгруппа:</label>
+                    <select id="subgroup" required>
+                        <option value="">Выберите подгруппу</option>
+                        <option value="1">Подгруппа 1</option>
+                        <option value="2">Подгруппа 2</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <!-- Пустая ячейка для выравнивания -->
+                    <div style="height: 40px;"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn">Начать обучение</button>
+            
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+        </form>
+
+        <button class="teacher-btn" id="teacherAccessBtn">Режим учителя (Просмотр итогов)</button>
+    </div>
+
+    <!-- Модальное окно для ввода пароля учителя -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-modal-content">
+            <h3 style="margin-bottom: 20px; color: #2c3e50;">Введите пароль для доступа</h3>
+            <div class="password-input-group">
+                <input type="password" id="teacherPassword" placeholder="Введите пароль">
+            </div>
+            <div id="passwordError" class="error-message" style="margin-bottom: 15px;"></div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="cancelPassword">Отмена</button>
+                <button class="btn-submit" id="submitPassword">Войти</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Функция для быстрого сохранения ученика (с опытом)
+        async function quickSaveStudent(studentData) {
+            // Сохраняем в localStorage
+            localStorage.setItem('currentStudent', JSON.stringify(studentData));
+
+            // Отправляем на сервер
+            setTimeout(() => {
+                try {
+                    const dataToSend = {
+                        action: 'save',
+                        password: SCRIPT_PASSWORD,
+                        firstName: studentData.firstName,
+                        lastName: studentData.lastName,
+                        grade: studentData.grade,
+                        classLetter: studentData.classLetter,
+                        subgroup: studentData.subgroup,
+                        currentPart: currentData.currentPart, // ← Начинаем с урока 1
+                        currentLevel: 0,
+                        experience: 0,
+                        lastLogin: new Date().toISOString()
+                    };
+
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(dataToSend)
+                    });
+                } catch (e) {
+                    console.log('Фоновое сохранение не удалось');
+                }
+            }, 100);
+
+            return true;
+        }
+
+        // Обработчик формы входа
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const grade = document.getElementById('grade').value;
+            const classLetter = document.getElementById('classLetter').value;
+            const subgroup = document.getElementById('subgroup').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+
+            if (!firstName || !lastName || !grade || !classLetter || !subgroup) {
+                errorMessage.textContent = 'Пожалуйста, заполните все поля';
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                return;
+            }
+
+            // Создаем объект с данными ученика
+            const studentData = {
+                firstName: firstName,
+                lastName: lastName,
+                grade: grade,
+                classLetter: classLetter,
+                subgroup: subgroup,
+                currentPart: 1,
+                currentLevel: 0,
+                fullClass: `${grade}${classLetter}`
+            };
+
+            // БЫСТРОЕ сохранение (без ожидания сервера)
+            const saved = await quickSaveStudent(studentData);
+
+            if (saved) {
+                // Сразу показываем сообщение и переходим
+                successMessage.textContent = 'Данные сохранены. Переход к игре...';
+                successMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+
+                // Убираем задержку - переходим сразу!
+                window.location.href = 'mainmenu.html';
+            } else {
+                errorMessage.textContent = 'Ошибка сохранения. Проверьте данные и попробуйте снова.';
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            }
+        });
+
+        // Обработчики для кнопки учителя (оставляем без изменений)
+        document.getElementById('teacherAccessBtn').addEventListener('click', function() {
+            document.getElementById('passwordModal').style.display = 'flex';
+        });
+
+        document.getElementById('cancelPassword').addEventListener('click', function() {
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('teacherPassword').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+        });
+
+        document.getElementById('submitPassword').addEventListener('click', function() {
+            const password = document.getElementById('teacherPassword').value;
+            const passwordError = document.getElementById('passwordError');
+
+            if (password === 'teacher') {
+                sessionStorage.setItem('teacherLoggedIn', 'true');
+                window.location.href = 'teacher.html';
+            } else {
+                passwordError.textContent = 'Неверный пароль';
+                passwordError.style.display = 'block';
+            }
+        });
+
+        // Очистка сообщений при вводе
+        document.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('input', () => {
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'none';
+            });
+        });
+
+        // Закрытие модального окна при клике вне его
+        document.getElementById('passwordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.getElementById('teacherPassword').value = '';
+                document.getElementById('passwordError').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
