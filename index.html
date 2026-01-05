@@ -308,7 +308,7 @@
                     lastLogin: new Date().toISOString()
                 };
         
-                const response = await fetch('https://script.google.com/macros/s/AKfycbyq9uwxwf69CVyyBvBGMRkgthzTCdgGRCIlXctOGJosU4kve2wUUQH-m0W2O2ES222t/exec', {
+                const response = await fetch('https://script.google.com/macros/s/ВАШ_НОВЫЙ_SCRIPT_ID/exec', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain;charset=utf-8',
@@ -319,8 +319,16 @@
                 const result = await response.text();
                 console.log('Данные отправлены на сервер:', result);
                 
+                // Проверяем результат
+                try {
+                    const jsonResult = JSON.parse(result);
+                    console.log('Результат в JSON:', jsonResult);
+                } catch(e) {
+                    console.log('Ответ не в JSON формате:', result);
+                }
+                
             } catch (e) {
-                console.log('Фоновое сохранение не удалось:', e);
+                console.log('Ошибка при отправке данных:', e);
             }
         
             return true;
