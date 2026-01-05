@@ -1,7 +1,7 @@
 // api.js - функции для работы с Google Sheets
 
 // URL вашего Google Apps Script веб-приложения
-const API_URL = 'https://script.google.com/macros/s/AKfycbwF5BhsgiI-XjQpn8lJVGA7Ntk0Bwx-L0gmRETiwbAslh2HhqFsPdMS1NUz4ptEIy4h/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzIWux8jtRwi4qreBoq6DI7UM2IOAMPzQ12S-Xer0pBDZhSihVCftDBfTNjWHxkwNpP/exec';
 const SCRIPT_PASSWORD = 'teacher123';
 
 // Функция для отправки данных ученика на сервер
