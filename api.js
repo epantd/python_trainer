@@ -4,7 +4,7 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwF5BhsgiI-XjQpn8lJVGA7Ntk0Bwx-L0gmRETiwbAslh2HhqFsPdMS1NUz4ptEIy4h/exec';
 const SCRIPT_PASSWORD = 'teacher123';
 
-// Функция для отправки данных ученика на сервер (без ожидания ответа)
+// Функция для отправки данных ученика на сервер
 async function saveStudentToServer(studentData) {
     try {
         // Создаем данные для отправки
@@ -18,26 +18,32 @@ async function saveStudentToServer(studentData) {
             subgroup: studentData.subgroup,
             currentPart: studentData.currentPart || 1,
             currentLevel: studentData.currentLevel || 0,
+            experience: studentData.experience || 0,
             lastLogin: new Date().toISOString()
         };
 
-        // Отправляем запрос БЕЗ ОЖИДАНИЯ (no-cors режим)
-        fetch(API_URL, {
+        // Отправляем запрос с правильными заголовками
+        const response = await fetch(API_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain;charset=utf-8',
             },
             body: JSON.stringify(dataToSend)
-        }).catch(error => {
-            console.log('Данные отправлены в фоновом режиме:', error ? 'с ошибкой' : 'успешно');
         });
 
-        return true;
+        // Получаем ответ
+        const result = await response.text();
+        console.log('Ответ от сервера:', result);
+        
+        try {
+            return JSON.parse(result);
+        } catch {
+            return { success: true, message: "Данные отправлены" };
+        }
 
     } catch (error) {
         console.error('Ошибка при отправке данных:', error);
-        return false;
+        return { success: false, error: error.toString() };
     }
 }
 
@@ -55,13 +61,13 @@ async function getStudentFromServer(studentData) {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain;charset=utf-8',
             },
             body: JSON.stringify(dataToSend)
         });
 
-        const result = await response.json();
-        return result;
+        const result = await response.text();
+        return JSON.parse(result);
 
     } catch (error) {
         console.error('Ошибка при получении данных:', error);
@@ -75,13 +81,16 @@ async function getAllStudents() {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain;charset=utf-8',
             },
-            body: JSON.stringify({ action: 'getAll' })
+            body: JSON.stringify({ 
+                action: 'getAll',
+                password: SCRIPT_PASSWORD 
+            })
         });
 
-        const result = await response.json();
-        return result;
+        const result = await response.text();
+        return JSON.parse(result);
 
     } catch (error) {
         console.error('Ошибка при получении данных:', error);
