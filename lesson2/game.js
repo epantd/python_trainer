@@ -16,7 +16,7 @@ async function saveProgressToGoogleSheets(action = 'update') {
         // ОБНОВЛЯЕМ ВСЕ ДАННЫЕ, ВКЛЮЧАЯ ОПЫТ
         studentData.currentPart = LESSON_NUMBER;
         studentData.currentLevel = currentLevel;
-        studentData.experience = totalExperience;  // ← ВАЖНО: сохраняем опыт
+        studentData.experience = totalExperience;   // ← ВАЖНО: сохраняем опыт
         studentData.lastSave = new Date().toISOString();
 
         // Сохраняем в localStorage (мгновенно)
@@ -35,11 +35,11 @@ async function saveProgressToGoogleSheets(action = 'update') {
                     subgroup: studentData.subgroup,
                     currentPart: LESSON_NUMBER,
                     currentLevel: studentData.currentLevel || 0,
-                    experience: studentData.experience || 0,  // ← ОТПРАВЛЯЕМ ОПЫТ
+                    experience: totalExperience,  // ← ОТПРАВЛЯЕМ ОПЫТ
                     lastLogin: new Date().toISOString()
                 };
 
-                fetch('https://script.google.com/macros/s/AKfycbwF5BhsgiI-XjQpn8lJVGA7Ntk0Bwx-L0gmRETiwbAslh2HhqFsPdMS1NUz4ptEIy4h/exec', {
+                fetch('https://script.google.com/macros/s/AKfycby7-PMwDOy11PysIDD0DSLkAcB7nq_fugQx6o92RPSYRRd-35Cp9XeC6noO-artX7XT/exec', {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: {
