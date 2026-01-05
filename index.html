@@ -291,7 +291,7 @@
         async function quickSaveStudent(studentData) {
             console.log("=== quickSaveStudent вызвана ===");
             console.log("Данные для сохранения:", studentData);
-            
+            studentData.experience = 0; 
             // Сохраняем в localStorage
             localStorage.setItem('currentStudent', JSON.stringify(studentData));
             console.log("Данные сохранены в localStorage");
