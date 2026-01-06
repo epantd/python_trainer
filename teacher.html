@@ -574,7 +574,16 @@
                     isToday = new Date().toDateString() === loginDate.toDateString();
                 }
 
-                const levelDisplay = student.currentLevel + 1 || 0;
+                // 🔧 ИСПРАВЛЕНИЕ: Обрабатываем разные форматы сохранения
+                if (typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
+                    // Формат из game1.js: "1.1", "1.2", "1.3"
+                    lessonDisplay = `Урок ${student.currentPart}`;
+                } else if (typeof student.currentPart === 'number') {
+                    // Формат из game2.js: 2, 3 и т.д.
+                    lessonDisplay = `Урок ${student.currentPart}`;
+                } else {
+                    lessonDisplay = `Урок ${student.currentPart || 1}`;
+                }
 
                 html += `
                     <tr>
@@ -583,8 +592,8 @@
                         <td class="class-cell">${student.grade || ''}</td>
                         <td class="class-cell">${student.classLetter || 'А'}</td>
                         <td>${student.subgroup || '1'}</td>
-                        <td>${formattedDate} </td>
-                        <td><span class="level-cell level-${student.currentPart || 1}">Урок ${student.currentPart || 1}</span></td>
+                        <td>${formattedDate} ${isToday ? ' (сегодня)' : ''}</td>
+                        <td><span class="level-cell level-${student.currentPart || 1}">${lessonDisplay}</span></td>
                         <td><span class="level-cell level-${student.currentLevel || 1}">${levelDisplay}</span></td>
                         <td class="experience-cell">${student.experience || 0}</td>
                     </tr>
