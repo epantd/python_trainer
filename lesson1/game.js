@@ -2227,7 +2227,7 @@ window.executeCode = async function() {
 // --- СПРАВОЧНИК ---
 
 const REFERENCE_DATA = {
-    1.1: {
+    "1.1": {
         title: "Справка: Урок 1 - Основы",
         content: `
             <h3>📌 Переменные</h3>
@@ -2247,7 +2247,7 @@ const REFERENCE_DATA = {
             </ul>
         `
     },
-    1.2: {
+    "1.2": {
         title: "Справка: Урок 1.2 - Ввод и движение",
         content: `
             <h3>📥 Ввод данных</h3>
@@ -2262,8 +2262,8 @@ const REFERENCE_DATA = {
             <p>Направления: вправо, влево, вверх, вниз.</p>
         `
     },
-    1.3: {
-        title: "Справка: Урок 3 - Комбинирование",
+    "1.3": {
+        title: "Справка: Урок 1.3 - Комбинирование",
         content: `
             <h3>🔄 Линейные алгоритмы</h3>
             <p>Сочетайте <code>input()</code>, вычисления и <code>print()</code>.</p>
@@ -2279,9 +2279,16 @@ const REFERENCE_DATA = {
 
 // Функция обновления справочника
 function updateReferenceContent() {
-    if (REFERENCE_DATA[currentPart]) {
-        document.getElementById('reference-title').textContent = REFERENCE_DATA[currentPart].title;
-        document.getElementById('reference-text').innerHTML = REFERENCE_DATA[currentPart].content;
+    // Формируем ключ для поиска в справочнике
+    const partKey = `1.${currentPart}`;
+    
+    if (REFERENCE_DATA[partKey]) {
+        document.getElementById('reference-title').textContent = REFERENCE_DATA[partKey].title;
+        document.getElementById('reference-text').innerHTML = REFERENCE_DATA[partKey].content;
+    } else {
+        // Fallback на случай если ключ не найден
+        document.getElementById('reference-title').textContent = "Справка";
+        document.getElementById('reference-text').innerHTML = "<p>Справка для этого урока недоступна.</p>";
     }
 }
 
