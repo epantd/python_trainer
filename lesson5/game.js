@@ -13,10 +13,13 @@ async function saveProgressToGoogleSheets(action = 'update') {
             return true;
         }
 
+        // 🔧 ИСПРАВЛЕНИЕ: Используем ту же логику, что и в game1.js
+        const savedPart = LESSON_NUMBER; // Для Урока 2 просто число 2
+        
         // ОБНОВЛЯЕМ ВСЕ ДАННЫЕ, ВКЛЮЧАЯ ОПЫТ
-        studentData.currentPart = LESSON_NUMBER;
+        studentData.currentPart = savedPart; // 🔧 Просто число
         studentData.currentLevel = currentLevel;
-        studentData.experience = totalExperience;  // ← ВАЖНО: сохраняем опыт
+        studentData.experience = totalExperience;
         studentData.lastSave = new Date().toISOString();
 
         // Сохраняем в localStorage (мгновенно)
@@ -33,9 +36,9 @@ async function saveProgressToGoogleSheets(action = 'update') {
                     grade: studentData.grade,
                     classLetter: studentData.classLetter,
                     subgroup: studentData.subgroup,
-                    currentPart: LESSON_NUMBER,
+                    currentPart: savedPart, // 🔧 Используем исправленный формат
                     currentLevel: studentData.currentLevel || 0,
-                    experience: totalExperience,  // ← ОТПРАВЛЯЕМ ОПЫТ
+                    experience: totalExperience,
                     lastLogin: new Date().toISOString()
                 };
 
@@ -71,13 +74,19 @@ async function loadProgress() {
                 console.log('Опыт загружен:', totalExperience);
             }
 
-            // Восстанавливаем уровень ТОЛЬКО если сохраненный урок совпадает с текущим
-            if (studentData.currentPart === LESSON_NUMBER && studentData.currentLevel !== undefined) {
+            // 🔧 ИСПРАВЛЕНИЕ: Теперь проверяем по-новому
+            const savedPart = studentData.currentPart;
+            
+            // Проверяем, если это Урок 2 (просто число 2)
+            if (savedPart === LESSON_NUMBER && studentData.currentLevel !== undefined) {
                 console.log('Загружен уровень', studentData.currentLevel, 'для урока', LESSON_NUMBER);
                 return {
                     success: true,
                     currentLevel: studentData.currentLevel
                 };
+            } else if (typeof savedPart === 'string' && savedPart.startsWith('1.')) {
+                // Если сохранен Урок 1, начинаем Урок 2 с 0
+                console.log('Обнаружен Урок 1. Начинаем Урок 2 с 0.');
             } else {
                 console.log('Урок не совпадает или нет сохраненного уровня. Начинаем с 0.');
             }
@@ -85,7 +94,6 @@ async function loadProgress() {
 
         return {
             success: true,
-            currentPart: 2,
             currentLevel: 0
         };
 
@@ -93,12 +101,10 @@ async function loadProgress() {
         console.log('Ошибка при загрузке прогресса:', error);
         return {
             success: true,
-            currentPart: 2,
             currentLevel: 0
         };
     }
 }
-
 async function autoSaveProgress() {
     await saveProgressToGoogleSheets('update');
 }
