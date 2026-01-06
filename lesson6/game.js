@@ -151,8 +151,8 @@ terminalSprite.src = '../images6/terminal-sprite.png';
 
 // Константы анимации
 const STONE_TOTAL_FRAMES = 8;
-const SOURCE_TOTAL_FRAMES = 7;
-const TERMINAL_TOTAL_FRAMES = 10;
+const SOURCE_TOTAL_FRAMES = 12;
+const TERMINAL_TOTAL_FRAMES = 6;
 const FRAME_WIDTH = 1098;
 const FRAME_HEIGHT = 1098;
 const FRAME_INTERVAL = 120;
