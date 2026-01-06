@@ -524,7 +524,7 @@
             const avgLevel = document.getElementById('avgLevel');
             const avgExperience = document.getElementById('avgExperience');
             const activeToday = document.getElementById('activeToday');
-
+        
             if (filteredStudents.length === 0) {
                 tbody.innerHTML = '';
                 noDataMessage.style.display = 'block';
@@ -535,11 +535,11 @@
                 activeToday.textContent = '0';
                 return;
             }
-
+        
             noDataMessage.style.display = 'none';
             totalCount.textContent = `Всего: ${filteredStudents.length} учеников`;
             totalStudents.textContent = filteredStudents.length;
-
+        
             // Рассчитываем статистику
             const totalLevel = filteredStudents.reduce((sum, student) => sum + (student.currentLevel || 0), 0);
             const totalExp = filteredStudents.reduce((sum, student) => sum + (student.experience || 0), 0);
@@ -549,11 +549,11 @@
                 const loginDate = new Date(student.lastLogin).toDateString();
                 return loginDate === today;
             }).length;
-
+        
             avgLevel.textContent = filteredStudents.length > 0 ? (totalLevel / filteredStudents.length).toFixed(1) : '0';
             avgExperience.textContent = filteredStudents.length > 0 ? Math.round(totalExp / filteredStudents.length) : '0';
             activeToday.textContent = todayActive;
-
+        
             // Обновляем заголовки сортировки
             document.querySelectorAll('th').forEach(th => {
                 th.classList.remove('sort-asc', 'sort-desc');
@@ -561,22 +561,24 @@
                     th.classList.add(sortAscending ? 'sort-asc' : 'sort-desc');
                 }
             });
-
+        
             let html = '';
             filteredStudents.forEach(student => {
                 let formattedDate = 'Нет данных';
                 let isToday = false;
-
+        
                 if (student.lastLogin) {
                     const loginDate = new Date(student.lastLogin);
                     formattedDate = loginDate.toLocaleDateString('ru-RU') + ' ' +
                                    loginDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
                     isToday = new Date().toDateString() === loginDate.toDateString();
                 }
-
-                const levelDisplay = student.currentLevel + 1 || 0;
+        
+                // 🔧 ИСПРАВЛЕНИЕ: Определяем отображение уровня и урока
+                const levelDisplay = (student.currentLevel || 0) + 1;
                 let lessonDisplay = '';
-                // 🔧 ИСПРАВЛЕНИЕ: Обрабатываем разные форматы сохранения
+                
+                // 🔧 ИСПРАВЛЕНИЕ: Проверяем формат currentPart
                 if (typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
                     // Формат из game1.js: "1.1", "1.2", "1.3"
                     lessonDisplay = `Урок ${student.currentPart}`;
@@ -584,9 +586,20 @@
                     // Формат из game2.js: 2, 3 и т.д.
                     lessonDisplay = `Урок ${student.currentPart}`;
                 } else {
+                    // По умолчанию
                     lessonDisplay = `Урок ${student.currentPart || 1}`;
                 }
-
+        
+                // 🔧 Определяем класс для цвета урока
+                let lessonClass = 1;
+                if (typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
+                    lessonClass = parseInt(student.currentPart.split('.')[0]);
+                } else if (typeof student.currentPart === 'number') {
+                    lessonClass = student.currentPart;
+                } else {
+                    lessonClass = student.currentPart || 1;
+                }
+        
                 html += `
                     <tr>
                         <td>${student.lastName || ''}</td>
@@ -594,14 +607,14 @@
                         <td class="class-cell">${student.grade || ''}</td>
                         <td class="class-cell">${student.classLetter || 'А'}</td>
                         <td>${student.subgroup || '1'}</td>
-                        <td>${formattedDate} ${isToday ? ' (сегодня)' : ''}</td>
-                        <td><span class="level-cell level-${student.currentPart || 1}">${lessonDisplay}</span></td>
+                        <td>${formattedDate} ${isToday ? '(сегодня)' : ''}</td>
+                        <td><span class="level-cell level-${lessonClass}">${lessonDisplay}</span></td>
                         <td><span class="level-cell level-${student.currentLevel || 1}">${levelDisplay}</span></td>
                         <td class="experience-cell">${student.experience || 0}</td>
                     </tr>
                 `;
             });
-
+        
             tbody.innerHTML = html;
         }
 
