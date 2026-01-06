@@ -574,6 +574,8 @@
                     isToday = new Date().toDateString() === loginDate.toDateString();
                 }
 
+                const levelDisplay = student.currentLevel + 1 || 0;
+                let lessonDisplay = '';
                 // 🔧 ИСПРАВЛЕНИЕ: Обрабатываем разные форматы сохранения
                 if (typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
                     // Формат из game1.js: "1.1", "1.2", "1.3"
