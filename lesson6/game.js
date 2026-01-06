@@ -130,24 +130,24 @@ const taskContent = document.getElementById('task-content');
 
 // --- ФОН ИГРОВОГО ПОЛЯ ---
 const background = new Image();
-background.src = '../images5/game-bg.png';
+background.src = '../images6/game-bg.png';
 background.onload = function() {
     drawGame(); 
 };
 
 const playerImage = new Image();
-playerImage.src = '../images5/player-main.png';
+playerImage.src = '../images6/player-main.png';
 playerImage.onload = function() { drawGame(); };
 
 // Спрайт-листы для анимации
 const stoneSprite = new Image();
-stoneSprite.src = '../images5/stone-sprite.png';
+stoneSprite.src = '../images6/stone-sprite.png';
 
 const sourceSprite = new Image();
-sourceSprite.src = '../images5/source-sprite.png';
+sourceSprite.src = '../images6/source-sprite.png';
 
 const terminalSprite = new Image();
-terminalSprite.src = '../images5/terminal-sprite.png';
+terminalSprite.src = '../images6/terminal-sprite.png';
 
 // Константы анимации
 const STONE_TOTAL_FRAMES = 8;
