@@ -56,7 +56,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         
         // Формируем данные для отправки - ТАКИЕ ЖЕ КАК В game-lesson1.js
         const dataToSend = {
-            action: 'save',
+            action: action,
             password: 'teacher123',
             firstName: studentData.firstName,
             lastName: studentData.lastName,
