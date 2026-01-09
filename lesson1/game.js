@@ -57,6 +57,11 @@ function startLevelTracking() {
 
 // Функция для расчета опыта при завершении уровня
 function calculateExperience() {
+
+    
+    let earnedExp = 0;
+    let reasons = [];
+
     // ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН ДАННЫМ УЧЕНИКОМ
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
 
@@ -75,9 +80,6 @@ function calculateExperience() {
         console.log(`[Опыт] Уровень ${currentLevel} уже пройден этим учеником, опыт не начисляется`);
         return 0; // Уровень уже пройден - опыт не начисляем
     }
-    
-    let earnedExp = 0;
-    let reasons = [];
     
     console.log("=== РАСЧЕТ ОПЫТА ===");
     console.log(`Попыток прохождения уровня: ${levelAttempts}`);
