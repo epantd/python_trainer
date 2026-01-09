@@ -356,7 +356,6 @@
                         <option value="C">C</option>
                         <option value="D">D</option>
                         <option value="E">E</option>
-
                     </select>
                 </div>
 
@@ -366,6 +365,20 @@
                         <option value="">Все подгруппы</option>
                         <option value="1">Подгруппа 1</option>
                         <option value="2">Подгруппа 2</option>
+                    </select>
+                </div>
+
+                <!-- НОВЫЙ ФИЛЬТР: Выбор урока для отображения опыта -->
+                <div class="filter-group">
+                    <label for="lessonFilter">Показывать опыт:</label>
+                    <select id="lessonFilter">
+                        <option value="total">Общий опыт</option>
+                        <option value="1">Урок 1</option>
+                        <option value="2">Урок 2</option>
+                        <option value="3">Урок 3</option>
+                        <option value="4">Урок 4</option>
+                        <option value="5">Урок 5</option>
+                        <option value="6">Урок 6</option>
                     </select>
                 </div>
 
@@ -405,9 +418,9 @@
                             <th data-sort="classLetter">Буква</th>
                             <th data-sort="subgroup">Подгруппа</th>
                             <th data-sort="lastLogin">Последний вход</th>
-                            <th data-sort="currentPart">Урок</th>
+                            <th data-sort="currentLesson">Урок</th>
                             <th data-sort="currentLevel">Уровень</th>
-                            <th data-sort="experience">Опыт</th>
+                            <th data-sort="experience" id="experienceHeader">Опыт (Общий)</th>
                         </tr>
                     </thead>
                     <tbody id="studentsTableBody">
@@ -442,7 +455,7 @@
 
     <script>
         // URL вашего Google Apps Script
-        const API_URL = 'https://script.google.com/macros/s/AKfycby7-PMwDOy11PysIDD0DSLkAcB7nq_fugQx6o92RPSYRRd-35Cp9XeC6noO-artX7XT/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycby4TbLPRdREI4e3tmGmFxnxFBbuNu1OzaCv_7DueSt5fvLFVVvEXo4pUbZmI4X_eF4j/exec';
         const SCRIPT_PASSWORD = 'teacher123';
 
         // Проверка авторизации учителя
@@ -457,6 +470,7 @@
         let filteredStudents = [];
         let currentSort = 'lastName';
         let sortAscending = true;
+        let selectedLesson = 'total'; // 'total' или номер урока '1', '2', и т.д.
 
         // Функция для загрузки данных с Google Sheets
         async function loadStudentsFromServer() {
@@ -505,14 +519,52 @@
                         classLetter: 'A',
                         subgroup: '1',
                         lastLogin: new Date().toISOString(),
-                        currentPart: 1,
+                        currentLesson: 1,
                         currentLevel: 5,
-                        experience: 1250
+                        totalExperience: 1250,
+                        experiencePerLesson: {
+                            lesson1: 500,
+                            lesson2: 400,
+                            lesson3: 350
+                        },
+                        completedLevels: {
+                            lesson1: ["0", "1", "2", "3", "4", "5"],
+                            lesson2: ["0", "1", "2"],
+                            lesson3: ["0"]
+                        }
                     }
                 ];
             }
 
             filteredStudents = [...allStudents];
+        }
+
+        // Функция форматирования даты
+        function formatDate(dateString) {
+            if (!dateString) return 'Нет данных';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return 'Некорректная дата';
+                
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (date >= today) {
+                    // Сегодня
+                    return date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                } else if (date >= yesterday) {
+                    // Вчера
+                    return 'Вчера ' + date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    // Ранее
+                    return date.toLocaleDateString('ru-RU');
+                }
+            } catch (e) {
+                return 'Ошибка даты';
+            }
         }
 
         // Отображение таблицы
@@ -524,6 +576,14 @@
             const avgLevel = document.getElementById('avgLevel');
             const avgExperience = document.getElementById('avgExperience');
             const activeToday = document.getElementById('activeToday');
+            const experienceHeader = document.getElementById('experienceHeader');
+            
+            // Обновляем заголовок колонки опыта
+            if (selectedLesson === 'total') {
+                experienceHeader.textContent = "Опыт (Общий)";
+            } else {
+                experienceHeader.textContent = `Опыт (Урок ${selectedLesson})`;
+            }
         
             if (filteredStudents.length === 0) {
                 tbody.innerHTML = '';
@@ -541,14 +601,30 @@
             totalStudents.textContent = filteredStudents.length;
         
             // Рассчитываем статистику
-            const totalLevel = filteredStudents.reduce((sum, student) => sum + (student.currentLevel || 0), 0);
-            const totalExp = filteredStudents.reduce((sum, student) => sum + (student.experience || 0), 0);
+            let totalLevel = 0;
+            let totalExp = 0;
+            let todayActive = 0;
             const today = new Date().toDateString();
-            const todayActive = filteredStudents.filter(student => {
-                if (!student.lastLogin) return false;
-                const loginDate = new Date(student.lastLogin).toDateString();
-                return loginDate === today;
-            }).length;
+            
+            filteredStudents.forEach(student => {
+                totalLevel += (student.currentLevel || 0);
+                
+                // Выбираем опыт в зависимости от выбранного урока
+                if (selectedLesson === 'total') {
+                    totalExp += (student.totalExperience || 0);
+                } else {
+                    const lessonKey = `lesson${selectedLesson}`;
+                    totalExp += (student.experiencePerLesson && student.experiencePerLesson[lessonKey]) || 0;
+                }
+                
+                // Подсчитываем активных сегодня
+                if (student.lastLogin) {
+                    const loginDate = new Date(student.lastLogin).toDateString();
+                    if (loginDate === today) {
+                        todayActive++;
+                    }
+                }
+            });
         
             avgLevel.textContent = filteredStudents.length > 0 ? (totalLevel / filteredStudents.length).toFixed(1) : '0';
             avgExperience.textContent = filteredStudents.length > 0 ? Math.round(totalExp / filteredStudents.length) : '0';
@@ -564,40 +640,50 @@
         
             let html = '';
             filteredStudents.forEach(student => {
-                let formattedDate = 'Нет данных';
-                let isToday = false;
-        
-                if (student.lastLogin) {
-                    const loginDate = new Date(student.lastLogin);
-                    formattedDate = loginDate.toLocaleDateString('ru-RU') + ' ' +
-                                   loginDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
-                    isToday = new Date().toDateString() === loginDate.toDateString();
-                }
-        
-                // 🔧 ИСПРАВЛЕНИЕ: Определяем отображение уровня и урока
+                // Форматируем дату
+                const formattedDate = formatDate(student.lastLogin);
+                
+                // Определяем отображение уровня и урока
                 const levelDisplay = (student.currentLevel || 0) + 1;
                 let lessonDisplay = '';
                 
-                // 🔧 ИСПРАВЛЕНИЕ: Проверяем формат currentPart
-                if (typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
-                    // Формат из game1.js: "1.1", "1.2", "1.3"
-                    lessonDisplay = `Урок ${student.currentPart}`;
-                } else if (typeof student.currentPart === 'number') {
-                    // Формат из game2.js: 2, 3 и т.д.
-                    lessonDisplay = `Урок ${student.currentPart}`;
+                // Определяем текущий урок ученика
+                if (typeof student.currentLesson === 'number') {
+                    lessonDisplay = `Урок ${student.currentLesson}`;
+                } else if (typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
+                    // Формат "1.1", "1.2", "1.3"
+                    const parts = student.currentPart.split('.');
+                    lessonDisplay = `Урок ${parts[0]}.${parts[1]}`;
                 } else {
-                    // По умолчанию
-                    lessonDisplay = `Урок ${student.currentPart || 1}`;
+                    lessonDisplay = `Урок ${student.currentLesson || 1}`;
                 }
-        
-                // 🔧 Определяем класс для цвета урока
+                
+                // Определяем класс для цвета урока
                 let lessonClass = 1;
-                if (typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
+                if (typeof student.currentLesson === 'number') {
+                    lessonClass = student.currentLesson;
+                } else if (student.currentPart && typeof student.currentPart === 'string' && student.currentPart.includes('.')) {
                     lessonClass = parseInt(student.currentPart.split('.')[0]);
-                } else if (typeof student.currentPart === 'number') {
-                    lessonClass = student.currentPart;
                 } else {
-                    lessonClass = student.currentPart || 1;
+                    lessonClass = student.currentLesson || 1;
+                }
+                
+                // Определяем опыт для отображения
+                let experienceToShow = 0;
+                if (selectedLesson === 'total') {
+                    experienceToShow = student.totalExperience || 0;
+                } else {
+                    const lessonKey = `lesson${selectedLesson}`;
+                    experienceToShow = student.experiencePerLesson ? 
+                        (student.experiencePerLesson[lessonKey] || 0) : 0;
+                }
+                
+                // Получаем количество пройденных уровней для выбранного урока
+                let completedCount = 0;
+                if (selectedLesson !== 'total' && student.completedLevels) {
+                    const lessonKey = `lesson${selectedLesson}`;
+                    completedCount = student.completedLevels[lessonKey] ? 
+                        student.completedLevels[lessonKey].length : 0;
                 }
         
                 html += `
@@ -610,7 +696,11 @@
                         <td>${formattedDate}</td>
                         <td><span class="level-cell level-${lessonClass}">${lessonDisplay}</span></td>
                         <td><span class="level-cell level-${student.currentLevel || 1}">${levelDisplay}</span></td>
-                        <td class="experience-cell">${student.experience || 0}</td>
+                        <td class="experience-cell">
+                            ${experienceToShow}
+                            ${selectedLesson !== 'total' && completedCount > 0 ? 
+                                `<br><small style="color: #7f8c8d; font-weight: normal;">Пройдено уровней: ${completedCount}</small>` : ''}
+                        </td>
                     </tr>
                 `;
             });
@@ -671,15 +761,22 @@
                 } else if (sortBy === 'lastLogin') {
                     valueA = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
                     valueB = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
-                } else if (sortBy === 'currentPart') {
-                    valueA = a.currentPart || 1;
-                    valueB = b.currentPart || 1;
+                } else if (sortBy === 'currentLesson') {
+                    valueA = a.currentLesson || 1;
+                    valueB = b.currentLesson || 1;
                 } else if (sortBy === 'currentLevel') {
                     valueA = a.currentLevel || 1;
                     valueB = b.currentLevel || 1;
                 } else if (sortBy === 'experience') {
-                    valueA = a.experience || 0;
-                    valueB = b.experience || 0;
+                    // Сортировка по опыту зависит от выбранного урока
+                    if (selectedLesson === 'total') {
+                        valueA = a.totalExperience || 0;
+                        valueB = b.totalExperience || 0;
+                    } else {
+                        const lessonKey = `lesson${selectedLesson}`;
+                        valueA = a.experiencePerLesson ? (a.experiencePerLesson[lessonKey] || 0) : 0;
+                        valueB = b.experiencePerLesson ? (b.experiencePerLesson[lessonKey] || 0) : 0;
+                    }
                 }
 
                 if (valueA < valueB) return ascending ? -1 : 1;
@@ -696,7 +793,9 @@
             document.getElementById('classLetterFilter').value = '';
             document.getElementById('subgroupFilter').value = '';
             document.getElementById('searchFilter').value = '';
-
+            document.getElementById('lessonFilter').value = 'total';
+            
+            selectedLesson = 'total';
             filteredStudents = [...allStudents];
             sortStudents('lastName', true);
         }
@@ -716,7 +815,19 @@
             // Обработчики событий
             document.getElementById('applyFilters').addEventListener('click', applyFilters);
             document.getElementById('resetFilters').addEventListener('click', resetFilters);
+            
+            // Обработчик выбора урока
+            document.getElementById('lessonFilter').addEventListener('change', function() {
+                selectedLesson = this.value;
+                // Обновляем сортировку, если сейчас сортируем по опыту
+                if (currentSort === 'experience') {
+                    sortStudents('experience', sortAscending);
+                } else {
+                    renderTable();
+                }
+            });
 
+            // Кнопки сортировки
             document.getElementById('sortByName').addEventListener('click', function() {
                 sortStudents('lastName', true);
             });
