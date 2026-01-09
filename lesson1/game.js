@@ -99,19 +99,14 @@ function calculateExperience() {
         }
     }
     
-    // Обновляем общий опыт ученика
+ // ВАЖНО: Обновляем ОБЩИЙ опыт
+    totalExperience += earnedExp;
+    
+    // Обновляем данные ученика
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
     if (studentData) {
-        // Получаем текущий опыт из localStorage или 0
-        const currentStudentExp = studentData.experience || 0;
-        const newTotalExp = currentStudentExp + earnedExp;
-        
-        // Обновляем данные ученика
-        studentData.experience = newTotalExp;
+        studentData.experience = totalExperience;
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
-        
-        // Обновляем глобальную переменную
-        totalExperience = newTotalExp;
     }
     
     // Добавляем уровень в пройденные
@@ -450,7 +445,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         // Обновляем данные ученика
         studentData.currentPart = partKey; // Сохраняем как строку "1.1"
         studentData.currentLevel = currentLevel + 1; // +1 для человекочитаемого формата
-        studentData.experience = newTotalExp;
+        studentData.experience = totalExperience;
         studentData.lastLogin = new Date().toISOString();
         
         // Сохраняем обновленные данные
@@ -468,7 +463,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             currentPart: partKey,              // "1.1", "1.2", "1.3"
             currentLevel: currentLevel + 1,    // 1-10 вместо 0-9
             earnedExp: earnedExp,              // Фактически заработанный опыт
-            totalExperience: newTotalExp,      // Общий опыт
+            totalExperience: totalExperience,     // Общий опыт
             lessonNumber: 1,                   // Всегда урок 1
             partNumber: currentPart,           // 1, 2, 3 (для удобства)
             levelKey: `${partKey}.${currentLevel + 1}`, // "1.1.1", "1.1.2" и т.д.
@@ -1036,7 +1031,7 @@ window.hideIntroAndStart = async function() {
     startGame(currentLevel);
     
     // Сохраняем факт начала сессии
-    saveProgressToGoogleSheets('login');
+    saveProgressToGoogleSheets('login', 0);
 }
 
 function showWinModal(isPartComplete = false) {
