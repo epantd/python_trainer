@@ -2346,32 +2346,10 @@ window.addEventListener('click', function(event) {
     }
 });
 
-// Обновлять справочник при смене уровня
-// Добавляем вызовы updateReferenceContent() в существующие функции:
-
-// В функции startGame() добавляем в конец:
-// updateReferenceContent();
-
-// В функции nextLevel() после смены уровня:
-// updateReferenceContent();
-
-// В функции showIntroScreen() при показе:
-// updateReferenceContent();
-
-// Добавить в конец каждого game.js, после всех функций
-// Инициализация опыта при загрузке
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-    // Сначала проверяем, есть ли данные ученика
-    const studentData = JSON.parse(localStorage.getItem('currentStudent'));
-    if (studentData) {
-        // Загружаем опыт ТОЛЬКО из данных ученика
-        totalExperience = studentData.experience || 0;
-        console.log('Опыт загружен из данных ученика:', totalExperience);
-    } else {
-        // Если нет данных ученика, начинаем с нуля
-        totalExperience = 0;
-    }
+    // ВАЖНО: Убираем дублирующую загрузку опыта!
+    // Опыт будет загружен ТОЛЬКО через loadProgress() в hideIntroAndStart()
     
     // Находим кнопку старта
     const startGameBtn = document.getElementById('start-game-btn');
@@ -2380,7 +2358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updateReferenceContent();
-    updateExperienceDisplay();
+    // НЕ вызываем updateExperienceDisplay() здесь - будет вызвано в startGame()
 });
 
 // --- Запуск игры при загрузке страницы ---
