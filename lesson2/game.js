@@ -24,7 +24,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         
         // 🔧 ИСПРАВЛЕНИЕ: Используем правильный формат как в game-lesson1.js
         // Для Урока 2 формат должен быть "2.0" (поскольку в Уроке 2 нет подчастей)
-        const savedPart = `2.0`;
+        const savedPart = LESSON_NUMBER;
         
         // 🆕 ВАЖНО: Обновляем текущие данные ученика
         studentData.currentPart = savedPart;
@@ -36,7 +36,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         
         // 🆕 Получаем общий опыт ученика
         const totalExp = parseInt(localStorage.getItem('total_experience') || '0');
-        const newTotalExp = totalExp + earnedExp;
+        const newTotalExp = action === 'login' ? totalExp : totalExp + earnedExp;
         localStorage.setItem('total_experience', newTotalExp.toString());
         
         // 🆕 Получаем опыт этого урока
@@ -50,7 +50,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         
         // Формируем данные для отправки - ТАКИЕ ЖЕ КАК В game-lesson1.js
         const dataToSend = {
-            action: 'save',
+            action: action,
             password: 'teacher123',
             firstName: studentData.firstName,
             lastName: studentData.lastName,
@@ -105,7 +105,7 @@ async function loadProgress() {
             const savedPart = studentData.currentPart;
             
             // Проверяем разные форматы savedPart
-            if (savedPart === '2.0' || savedPart === 2 || savedPart === '2') {
+            if (studentData.currentPart === LESSON_NUMBER || studentData.currentPart === LESSON_NUMBER.toString()) {
                 // Если сохранен Урок 2
                 if (studentData.currentLevel !== undefined) {
                     console.log('Загружен уровень', studentData.currentLevel, 'для урока', LESSON_NUMBER);
