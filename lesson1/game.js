@@ -1098,7 +1098,6 @@ window.nextLevel = async function() {
     
     if (currentLevel + 1 < currentLevelList.length) {
         currentLevel++;
-        await saveProgressToGoogleSheets();
         startGame(currentLevel);
     } else {
         currentPart++;
