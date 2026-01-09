@@ -465,9 +465,8 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
         
         // Получаем общий опыт ученика
-        const totalExp = parseInt(localStorage.getItem('total_experience') || '0');
-        const newTotalExp = totalExp + earnedExp;
-        localStorage.setItem('total_experience', newTotalExp.toString());
+        const currentStudentExp = studentData.experience || 0;
+        const newStudentExp = action === 'login' ? currentStudentExp : currentStudentExp + earnedExp;
         
         // Получаем опыт этого урока
         const lessonExpKey = `experience_lesson${lessonNumber}`;
@@ -2382,35 +2381,41 @@ window.addEventListener('click', function(event) {
 // Добавить в конец каждого game.js, после всех функций
 // Инициализация опыта при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-    // Загружаем общий опыт из localStorage
-    const storedExp = localStorage.getItem('total_experience');
-    if (storedExp) {
-        totalExperience = parseInt(storedExp);
-        updateExperienceDisplay();
-    }
-    
-    // Проверяем, есть ли данные ученика
+    // 🆕 ИСПРАВЛЕНО: Загружаем опыт из данных ученика, а не из общего хранилища
     const studentData = JSON.parse(localStorage.getItem('currentStudent'));
     if (studentData) {
         // Если у ученика уже есть опыт в данных, используем его
-        if (studentData.experience && studentData.experience > totalExperience) {
+        if (studentData.experience !== undefined) {
             totalExperience = studentData.experience;
-            updateExperienceDisplay();
+            console.log('Опыт загружен из данных ученика:', totalExperience);
         }
         
-        // Убеждаемся, что есть переменные для хранения опыта уроков
-        for (let i = 1; i <= 6; i++) {
-            const lessonExpKey = `experience_lesson${i}`;
-            const completedKey = `completed_levels_lesson${i}`;
-            
-            if (!localStorage.getItem(lessonExpKey)) {
-                localStorage.setItem(lessonExpKey, '0');
-            }
-            if (!localStorage.getItem(completedKey)) {
-                localStorage.setItem(completedKey, '[]');
-            }
+        // 🆕 Убеждаемся, что есть переменные для хранения опыта уроков ДЛЯ ЭТОГО УЧЕНИКА
+        const studentIdentifier = getStudentIdentifier();
+        const lessonExpKey = `experience_${studentIdentifier}_lesson${LESSON_NUMBER}`;
+        const completedKey = `completed_levels_${studentIdentifier}_lesson${LESSON_NUMBER}`;
+        
+        if (!localStorage.getItem(lessonExpKey)) {
+            localStorage.setItem(lessonExpKey, '0');
+        }
+        if (!localStorage.getItem(completedKey)) {
+            localStorage.setItem(completedKey, '[]');
         }
     }
+    
+    // Получаем кнопку по ID, как она указана в index.html
+    const startGameBtn = document.getElementById('start-game-btn');
+    
+    // Если кнопка найдена, привязываем к ней функцию
+    if (startGameBtn) {
+        startGameBtn.onclick = hideIntroAndStart;
+    }
+    
+    // Инициализируем справочник при загрузке
+    updateReferenceContent();
+    
+    // 🆕 Обновляем отображение опыта
+    updateExperienceDisplay();
 });
 
 // --- Запуск игры при загрузке страницы ---
