@@ -1,3 +1,12 @@
+function getStudentIdentifier() {
+    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    if (studentData && studentData.lastName && studentData.firstName && studentData.grade && studentData.classLetter && studentData.subgroup) {
+        return `${studentData.lastName}_${studentData.firstName}_${studentData.grade}${studentData.classLetter}_${studentData.subgroup}`;
+    }
+    return 'anonymous';
+}
+
+
 const LESSON_NUMBER = 2;
 
 // ===============================
@@ -13,11 +22,12 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             return true;
         }
         
-        // 🔧 ИСПРАВЛЕНИЕ: Используем ту же логику, что и в game1.js
-        const savedPart = LESSON_NUMBER; // Для Урока 2 просто число 2
+        // 🔧 ИСПРАВЛЕНИЕ: Используем правильный формат как в game-lesson1.js
+        // Для Урока 2 формат должен быть "2.0" (поскольку в Уроке 2 нет подчастей)
+        const savedPart = `2.0`;
         
         // 🆕 ВАЖНО: Обновляем текущие данные ученика
-        studentData.currentPart = savedPart; // 🔧 Просто число
+        studentData.currentPart = savedPart;
         studentData.currentLevel = currentLevel;
         studentData.lastLogin = new Date().toISOString();
         
@@ -38,7 +48,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         // 🆕 ВАЖНО: Формируем правильный ключ уровня
         const levelKey = `${LESSON_NUMBER}.${currentLevel}`;
         
-        // Формируем данные для отправки
+        // Формируем данные для отправки - ТАКИЕ ЖЕ КАК В game-lesson1.js
         const dataToSend = {
             action: 'save',
             password: 'teacher123',
@@ -47,12 +57,12 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             grade: studentData.grade,
             classLetter: studentData.classLetter,
             subgroup: studentData.subgroup,
-            currentPart: savedPart,  // 🔧 Число 2
-            currentLevel: currentLevel,        // 🆕 Актуальный номер уровня
-            earnedExp: earnedExp,              // 🆕 Фактически заработанный опыт
-            totalExperience: newTotalExp,      // 🆕 Общий опыт
-            lessonNumber: LESSON_NUMBER,       // 🆕 Номер урока (2)
-            levelKey: levelKey,                // 🆕 Ключ уровня "2.0", "2.1" и т.д.
+            currentPart: savedPart,  // 🔧 Формат "2.0"
+            currentLevel: currentLevel,        
+            earnedExp: earnedExp,              
+            totalExperience: newTotalExp,      
+            lessonNumber: LESSON_NUMBER,       
+            levelKey: levelKey,                
             lastLogin: studentData.lastLogin
         };
 
@@ -91,12 +101,12 @@ async function loadProgress() {
                 console.log('Опыт загружен:', totalExperience);
             }
 
-            // 🆕 ИСПРАВЛЕНИЕ: Теперь проверяем по-новому (совместимо с lesson1)
+            // 🆕 ИСПРАВЛЕНИЕ: Проверяем формат как в game-lesson1.js
             const savedPart = studentData.currentPart;
             
-            // 🆕 Обрабатываем разные форматы savedPart
-            if (savedPart === LESSON_NUMBER || savedPart === LESSON_NUMBER.toString()) {
-                // Если сохранен Урок 2 (число 2 или строка "2")
+            // Проверяем разные форматы savedPart
+            if (savedPart === '2.0' || savedPart === 2 || savedPart === '2') {
+                // Если сохранен Урок 2
                 if (studentData.currentLevel !== undefined) {
                     console.log('Загружен уровень', studentData.currentLevel, 'для урока', LESSON_NUMBER);
                     return {
@@ -391,14 +401,8 @@ function startLevelTracking() {
 
 // Функция для расчета опыта при завершении уровня (ОБНОВЛЕНА)
 function calculateExperience() {
-    // 🆕 ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН ДАННЫМ УЧЕНИКОМ
-    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
-    
-    // Создаем уникальный ключ для каждого ученика
-    let studentIdentifier = 'anonymous';
-    if (studentData && studentData.lastName && studentData.firstName && studentData.grade && studentData.classLetter && studentData.subgroup) {
-        studentIdentifier = `${studentData.lastName}_${studentData.firstName}_${studentData.grade}${studentData.classLetter}_${studentData.subgroup}`;
-    }
+    // Используем функцию getStudentIdentifier из game-lesson1.js
+    let studentIdentifier = getStudentIdentifier();
     
     const completedKey = `completed_levels_${studentIdentifier}_lesson${LESSON_NUMBER}`;
     let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
