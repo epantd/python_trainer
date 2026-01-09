@@ -445,8 +445,6 @@ function checkAllImagesLoaded() {
     }
 }
 
-// === НОВАЯ СИСТЕМА СОХРАНЕНИЯ ПРОГРЕССА ===
-
 async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
     try {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
@@ -456,27 +454,31 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             return true;
         }
         
-        const lessonNumber = currentPart || 1; // ← ИЗМЕНЕНО: берем текущую часть
-        const savedPart = `1.${currentPart}`;
+        const lessonNumber = currentPart || 1;
         
-        // Получаем опыт этого урока из localStorage
+        // 🆕 ВАЖНО: Обновляем текущие данные ученика
+        studentData.currentPart = `1.${currentPart}`;
+        studentData.currentLevel = currentLevel;
+        studentData.lastLogin = new Date().toISOString();
+        
+        // 🆕 ВАЖНО: Сохраняем обновленные данные обратно
+        localStorage.setItem('currentStudent', JSON.stringify(studentData));
+        
+        // Получаем общий опыт ученика
+        const totalExp = parseInt(localStorage.getItem('total_experience') || '0');
+        const newTotalExp = totalExp + earnedExp;
+        localStorage.setItem('total_experience', newTotalExp.toString());
+        
+        // Получаем опыт этого урока
         const lessonExpKey = `experience_lesson${lessonNumber}`;
         const lessonExperience = parseInt(localStorage.getItem(lessonExpKey) || '0');
+        const newLessonExp = lessonExperience + earnedExp;
+        localStorage.setItem(lessonExpKey, newLessonExp.toString());
         
-        // 🆕 ВАЖНО: Получаем уровень, который только что пройден
+        // 🆕 ВАЖНО: Формируем правильный ключ уровня
         const levelKey = `${lessonNumber}.${currentLevel}`;
         
-        // 🆕 ВАЖНО: Формируем данные о пройденном уровне
-        const completedKey = `completed_levels_lesson${lessonNumber}`;
-        const completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
-        
-        // 🆕 ВАЖНО: Увеличиваем только что полученный опыт
-        const newEarnedExp = earnedExp || 0;
-
-        // Сохраняем в localStorage
-        localStorage.setItem('currentStudent', JSON.stringify(studentData));
-
-        // 🆕 ВАЖНО: Формируем данные для отправки
+        // Формируем данные для отправки
         const dataToSend = {
             action: 'save',
             password: 'teacher123',
@@ -485,12 +487,13 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             grade: studentData.grade,
             classLetter: studentData.classLetter,
             subgroup: studentData.subgroup,
-            currentPart: savedPart, 
-            currentLevel: studentData.currentLevel || 0,
-            earnedExp: newEarnedExp,  // ← только что заработанный опыт
-            lessonNumber: lessonNumber, // ← номер урока (части)
-            levelKey: levelKey, // ← ключ уровня (формат "1.1", "2.3" и т.д.)
-            lastLogin: new Date().toISOString()
+            currentPart: `1.${currentPart}`,  // Формат "1.1", "1.2", "1.3"
+            currentLevel: currentLevel,        // 🆕 Актуальный номер уровня
+            earnedExp: earnedExp,              // 🆕 Фактически заработанный опыт
+            totalExperience: newTotalExp,      // 🆕 Общий опыт
+            lessonNumber: lessonNumber,
+            levelKey: levelKey,
+            lastLogin: studentData.lastLogin
         };
 
         console.log('Отправляю данные на сервер:', dataToSend);
