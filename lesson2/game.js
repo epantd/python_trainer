@@ -394,7 +394,10 @@ function updateExperienceDisplay() {
         document.getElementById('game-main').appendChild(display);
     }
     
-    document.getElementById('experience-display').textContent = `Опыт: ${totalExperience}`;
+    // 🆕 ВАЖНО: Всегда берем актуальный опыт из данных ученика
+    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    const currentExp = studentData.experience || 0;
+    document.getElementById('experience-display').textContent = `Опыт: ${currentExp}`;
 }
 
 // Функция для начала отслеживания уровня
