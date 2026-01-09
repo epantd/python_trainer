@@ -57,14 +57,11 @@ function startLevelTracking() {
 
 // Функция для расчета опыта при завершении уровня
 function calculateExperience() {
-
-    
     let earnedExp = 0;
     let reasons = [];
 
     // ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН ДАННЫМ УЧЕНИКОМ
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
-
     
     // Создаем уникальный ключ для каждого ученика
     let studentIdentifier = 'anonymous';
@@ -72,13 +69,16 @@ function calculateExperience() {
         studentIdentifier = `${studentData.lastName}_${studentData.firstName}_${studentData.grade}${studentData.classLetter}_${studentData.subgroup}`;
     }
     
-    const completedKey = `completed_levels_${studentIdentifier}_lesson${LESSON_NUMBER}`;
+    // 🆕 ИЗМЕНЕНО: Используем currentPart вместо LESSON_NUMBER
+    const completedKey = `completed_levels_${studentIdentifier}_lesson${currentPart}`;
     let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
-    const levelKey = `${LESSON_NUMBER}.${currentLevel}`;
+    
+    // 🆕 ИЗМЕНЕНО: Формат ключа уровня - "часть.уровень"
+    const levelKey = `${currentPart}.${currentLevel}`;
     
     if (completedLevels.includes(levelKey)) {
-        console.log(`[Опыт] Уровень ${currentLevel} уже пройден этим учеником, опыт не начисляется`);
-        return 0; // Уровень уже пройден - опыт не начисляем
+        console.log(`[Опыт] Уровень ${levelKey} уже пройден этим учеником, опыт не начисляется`);
+        return 0;
     }
     
     console.log("=== РАСЧЕТ ОПЫТА ===");
@@ -456,55 +456,58 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             return true;
         }
         
-        const lessonNumber = LESSON_NUMBER || 1;
+        const lessonNumber = currentPart || 1; // ← ИЗМЕНЕНО: берем текущую часть
         const savedPart = `1.${currentPart}`;
         
         // Получаем опыт этого урока из localStorage
         const lessonExpKey = `experience_lesson${lessonNumber}`;
         const lessonExperience = parseInt(localStorage.getItem(lessonExpKey) || '0');
         
-        // ОБНОВЛЯЕМ ВСЕ ДАННЫЕ
-        studentData.currentPart = savedPart;
-        studentData.currentLevel = currentLevel;
-        studentData.experience = totalExperience;
-        studentData.lessonExperience = lessonExperience;
-        studentData.lastSave = new Date().toISOString();
+        // 🆕 ВАЖНО: Получаем уровень, который только что пройден
+        const levelKey = `${lessonNumber}.${currentLevel}`;
+        
+        // 🆕 ВАЖНО: Формируем данные о пройденном уровне
+        const completedKey = `completed_levels_lesson${lessonNumber}`;
+        const completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
+        
+        // 🆕 ВАЖНО: Увеличиваем только что полученный опыт
+        const newEarnedExp = earnedExp || 0;
 
         // Сохраняем в localStorage
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
 
-        // Отправляем на сервер ВСЕ ДАННЫЕ
-        setTimeout(() => {
-            try {
-                const dataToSend = {
-                    action: 'save',
-                    password: 'teacher123',
-                    firstName: studentData.firstName,
-                    lastName: studentData.lastName,
-                    grade: studentData.grade,
-                    classLetter: studentData.classLetter,
-                    subgroup: studentData.subgroup,
-                    currentPart: savedPart, 
-                    currentLevel: studentData.currentLevel || 0,
-                    earnedExp: earnedExp,  // ← ТОЛЬКО ЧТО ЗАРАБОТАННЫЙ опыт!
-                    totalExperience: totalExperience,  // ← Общий опыт (для отображения)
-                    lessonNumber: lessonNumber,
-                    lessonExperience: lessonExperience,  // ← Опыт этого урока (суммарный)
-                    lastLogin: new Date().toISOString()
-                };
+        // 🆕 ВАЖНО: Формируем данные для отправки
+        const dataToSend = {
+            action: 'save',
+            password: 'teacher123',
+            firstName: studentData.firstName,
+            lastName: studentData.lastName,
+            grade: studentData.grade,
+            classLetter: studentData.classLetter,
+            subgroup: studentData.subgroup,
+            currentPart: savedPart, 
+            currentLevel: studentData.currentLevel || 0,
+            earnedExp: newEarnedExp,  // ← только что заработанный опыт
+            lessonNumber: lessonNumber, // ← номер урока (части)
+            levelKey: levelKey, // ← ключ уровня (формат "1.1", "2.3" и т.д.)
+            lastLogin: new Date().toISOString()
+        };
 
-                fetch('https://script.google.com/macros/s/AKfycbyTMh5YksG0JfVqQBvpzxo-IE5xpM1PtvW29TbHqWeOg0enT0VG0QSUw1tER06Hr7Aa/exec', {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(dataToSend)
-                });
-            } catch (e) {
-                console.log('Фоновое сохранение не удалось');
-            }
-        }, 50);
+        console.log('Отправляю данные на сервер:', dataToSend);
+        
+        // Отправляем на сервер
+        fetch('https://script.google.com/macros/s/AKfycbzxAsVN4tNt0d6Uvm--n_vlypPDnflxEQpZ_IvMhEOOzq6KjBlMItvhdWQtB6pAMEJH/exec', {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend)
+        }).then(() => {
+            console.log('Данные отправлены на сервер');
+        }).catch(error => {
+            console.log('Ошибка отправки:', error);
+        });
 
         return true;
 
@@ -1061,6 +1064,9 @@ function showWinModal(isPartComplete = false) {
         ? `<br><br>🎖️ <strong>Общий опыт за занятие: ${totalExperience}</strong>`
         : `<br><br>⭐ Получено опыта: +${earnedExp} (всего: ${totalExperience})`;
     
+    // 🆕 ВАЖНО: Сохраняем прогресс с полученным опытом
+    saveProgressToGoogleSheets('update', earnedExp);
+    
     if (isPartComplete) {
         const nextPart = currentPart + 1;
         let nextLessonText = "";
@@ -1091,12 +1097,12 @@ window.nextLevel = async function() {
     
     if (currentLevel + 1 < currentLevelList.length) {
         currentLevel++;
-        await saveProgressToGoogleSheets();
+        await saveProgressToGoogleSheets('update', 0); // Сохраняем прогресс без нового опыта
         startGame(currentLevel);
     } else {
         currentPart++;
         currentLevel = 0;
-        await saveProgressToGoogleSheets();
+        await saveProgressToGoogleSheets('update', 0); // Сохраняем прогресс без нового опыта
         
         if (currentPart > 3) {
             // Все уроки завершены
@@ -2371,10 +2377,24 @@ window.addEventListener('click', function(event) {
 // updateReferenceContent();
 
 // Добавить в конец каждого game.js, после всех функций
+// Инициализация опыта при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-    // Инициализируем localStorage для нового ученика
+    // Загружаем общий опыт из localStorage
+    const storedExp = localStorage.getItem('total_experience');
+    if (storedExp) {
+        totalExperience = parseInt(storedExp);
+        updateExperienceDisplay();
+    }
+    
+    // Проверяем, есть ли данные ученика
     const studentData = JSON.parse(localStorage.getItem('currentStudent'));
     if (studentData) {
+        // Если у ученика уже есть опыт в данных, используем его
+        if (studentData.experience && studentData.experience > totalExperience) {
+            totalExperience = studentData.experience;
+            updateExperienceDisplay();
+        }
+        
         // Убеждаемся, что есть переменные для хранения опыта уроков
         for (let i = 1; i <= 6; i++) {
             const lessonExpKey = `experience_lesson${i}`;
@@ -2387,9 +2407,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem(completedKey, '[]');
             }
         }
-        
-        // Обновляем отображение опыта
-        updateExperienceDisplay();
     }
 });
 
