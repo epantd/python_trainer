@@ -447,7 +447,7 @@ function checkAllImagesLoaded() {
 
 // === НОВАЯ СИСТЕМА СОХРАНЕНИЯ ПРОГРЕССА ===
 
-async function saveProgressToGoogleSheets(action = 'update') {
+async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
     try {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
@@ -456,10 +456,7 @@ async function saveProgressToGoogleSheets(action = 'update') {
             return true;
         }
         
-        // Определяем номер урока из LESSON_NUMBER
         const lessonNumber = LESSON_NUMBER || 1;
-        
-        // ФОРМАТ СОХРАНЕНИЯ: "1.1", "1.2", "1.3"
         const savedPart = `1.${currentPart}`;
         
         // Получаем опыт этого урока из localStorage
@@ -469,8 +466,8 @@ async function saveProgressToGoogleSheets(action = 'update') {
         // ОБНОВЛЯЕМ ВСЕ ДАННЫЕ
         studentData.currentPart = savedPart;
         studentData.currentLevel = currentLevel;
-        studentData.experience = totalExperience;  // ← Общий опыт
-        studentData.lessonExperience = lessonExperience; // ← Опыт этого урока
+        studentData.experience = totalExperience;
+        studentData.lessonExperience = lessonExperience;
         studentData.lastSave = new Date().toISOString();
 
         // Сохраняем в localStorage
@@ -489,13 +486,14 @@ async function saveProgressToGoogleSheets(action = 'update') {
                     subgroup: studentData.subgroup,
                     currentPart: savedPart, 
                     currentLevel: studentData.currentLevel || 0,
-                    experience: totalExperience,          // ← Общий опыт
-                    lessonNumber: lessonNumber,          // ← Номер урока (1, 2, 3...)
-                    lessonExperience: lessonExperience,  // ← Опыт этого урока
+                    earnedExp: earnedExp,  // ← ТОЛЬКО ЧТО ЗАРАБОТАННЫЙ опыт!
+                    totalExperience: totalExperience,  // ← Общий опыт (для отображения)
+                    lessonNumber: lessonNumber,
+                    lessonExperience: lessonExperience,  // ← Опыт этого урока (суммарный)
                     lastLogin: new Date().toISOString()
                 };
 
-                fetch('https://script.google.com/macros/s/AKfycbwbuz4SQ1d35hzYqlRyBwBGuForQlFG9KJkYRHL4VCG_vK2_vfpXyRy4jV0_AWs7_2V/exec', {
+                fetch('https://script.google.com/macros/s/AKfycbyTMh5YksG0JfVqQBvpzxo-IE5xpM1PtvW29TbHqWeOg0enT0VG0QSUw1tER06Hr7Aa/exec', {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: {
