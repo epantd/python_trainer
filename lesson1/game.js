@@ -1,3 +1,11 @@
+function getStudentIdentifier() {
+    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    if (studentData && studentData.lastName && studentData.firstName && studentData.grade && studentData.classLetter && studentData.subgroup) {
+        return `${studentData.lastName}_${studentData.firstName}_${studentData.grade}${studentData.classLetter}_${studentData.subgroup}`;
+    }
+    return 'anonymous';
+}
+
 const LESSON_NUMBER = 1;
 // ===============================
 // СИСТЕМА ОПЫТА
@@ -49,13 +57,21 @@ function startLevelTracking() {
 
 // Функция для расчета опыта при завершении уровня
 function calculateExperience() {
-    // ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН
-    const completedKey = `completed_levels_lesson${LESSON_NUMBER}`;
+    // ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН ДАННЫМ УЧЕНИКОМ
+    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    
+    // Создаем уникальный ключ для каждого ученика
+    let studentIdentifier = 'anonymous';
+    if (studentData && studentData.lastName && studentData.firstName && studentData.grade && studentData.classLetter && studentData.subgroup) {
+        studentIdentifier = `${studentData.lastName}_${studentData.firstName}_${studentData.grade}${studentData.classLetter}_${studentData.subgroup}`;
+    }
+    
+    const completedKey = `completed_levels_${studentIdentifier}_lesson${LESSON_NUMBER}`;
     let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
     const levelKey = `${LESSON_NUMBER}.${currentLevel}`;
     
     if (completedLevels.includes(levelKey)) {
-        console.log(`[Опыт] Уровень ${currentLevel} уже пройден, опыт не начисляется`);
+        console.log(`[Опыт] Уровень ${currentLevel} уже пройден этим учеником, опыт не начисляется`);
         return 0; // Уровень уже пройден - опыт не начисляем
     }
     
@@ -104,7 +120,7 @@ function calculateExperience() {
     
     totalExperience += earnedExp;
     
-    // Добавляем уровень в пройденные
+    // Добавляем уровень в пройденные ДЛЯ ЭТОГО УЧЕНИКА
     completedLevels.push(levelKey);
     localStorage.setItem(completedKey, JSON.stringify(completedLevels));
     
@@ -492,12 +508,13 @@ async function loadProgress() {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
         if (studentData) {
-            // Восстанавливаем опыт
+            // Восстанавливаем опыт из данных ученика
             if (studentData.experience) {
                 totalExperience = studentData.experience;
                 console.log('Опыт загружен:', totalExperience);
             }
 
+            // Проверяем, есть ли сохраненный прогресс для этого ученика
             if (studentData.currentPart && studentData.currentPart.startsWith('1.')) {
                 try {
                     const savedPart = studentData.currentPart;
@@ -510,7 +527,8 @@ async function loadProgress() {
                         console.log('Прогресс загружен:', {
                             savedPart: savedPart,
                             currentPart: currentPart,
-                            currentLevel: currentLevel
+                            currentLevel: currentLevel,
+                            student: `${studentData.lastName} ${studentData.firstName}`
                         });
                         
                         return {
@@ -525,6 +543,8 @@ async function loadProgress() {
             }
             
             console.log('Урок не совпадает или нет сохраненного уровня. Начинаем с начала.');
+        } else {
+            console.log('Нет данных ученика. Начинаем с начала.');
         }
 
         // По умолчанию начинаем с первой части
