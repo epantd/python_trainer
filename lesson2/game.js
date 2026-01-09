@@ -476,10 +476,15 @@ function calculateExperience() {
     // totalExperience += earnedExp; // УДАЛИТЬ ЭТУ СТРОКУ
     
     // Выводим подробный отчет в консоль
+	// Выводим подробный отчет в консоль
     console.log(`=== ИТОГО ===`);
     console.log(`Получено опыта: ${earnedExp}`);
     console.log(`Причины: ${reasons.join(', ')}`);
-    console.log(`Общий опыт (будет обновлен после сохранения): ${totalExperience + earnedExp}`);
+    
+    // Получаем текущий опыт для отображения
+    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    const currentTotalExp = studentData.experience || 0;
+    console.log(`Новый общий опыт (будет сохранен): ${currentTotalExp + earnedExp}`);
     console.log("===============");
     
     // Также показываем всплывающее сообщение для пользователя
