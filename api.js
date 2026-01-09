@@ -1,5 +1,5 @@
 // api.js - обновленная версия с проверкой пройденных уровней
-const API_URL = 'https://script.google.com/macros/s/AKfycby7-PMwDOy11PysIDD0DSLkAcB7nq_fugQx6o92RPSYRRd-35Cp9XeC6noO-artX7XT/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycby4TbLPRdREI4e3tmGmFxnxFBbuNu1OzaCv_7DueSt5fvLFVVvEXo4pUbZmI4X_eF4j/exec';
 const SCRIPT_PASSWORD = 'teacher123';
 
 // Основная функция сохранения прогресса
