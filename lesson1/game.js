@@ -59,6 +59,10 @@ function startLevelTracking() {
 function calculateExperience() {
     // ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН ДАННЫМ УЧЕНИКОМ
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    const lessonExpKey = `experience_lesson${LESSON_NUMBER}`;
+    const currentLessonExp = parseInt(localStorage.getItem(lessonExpKey) || '0');
+    const newLessonExp = currentLessonExp + earnedExp;
+    localStorage.setItem(lessonExpKey, newLessonExp.toString());
     
     // Создаем уникальный ключ для каждого ученика
     let studentIdentifier = 'anonymous';
@@ -453,19 +457,27 @@ async function saveProgressToGoogleSheets(action = 'update') {
             return true;
         }
         
+        // Определяем номер урока из LESSON_NUMBER
+        const lessonNumber = LESSON_NUMBER || 1;
+        
         // ФОРМАТ СОХРАНЕНИЯ: "1.1", "1.2", "1.3"
         const savedPart = `1.${currentPart}`;
         
-        // ОБНОВЛЯЕМ ВСЕ ДАННЫЕ, ВКЛЮЧАЯ ОПЫТ
+        // Получаем опыт этого урока из localStorage
+        const lessonExpKey = `experience_lesson${lessonNumber}`;
+        const lessonExperience = parseInt(localStorage.getItem(lessonExpKey) || '0');
+        
+        // ОБНОВЛЯЕМ ВСЕ ДАННЫЕ
         studentData.currentPart = savedPart;
         studentData.currentLevel = currentLevel;
-        studentData.experience = totalExperience;  // ← ВАЖНО: сохраняем опыт
+        studentData.experience = totalExperience;  // ← Общий опыт
+        studentData.lessonExperience = lessonExperience; // ← Опыт этого урока
         studentData.lastSave = new Date().toISOString();
 
-        // Сохраняем в localStorage (мгновенно)
+        // Сохраняем в localStorage
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
 
-        // Отправляем на сервер ВСЕ ДАННЫЕ, ВКЛЮЧАЯ ОПЫТ
+        // Отправляем на сервер ВСЕ ДАННЫЕ
         setTimeout(() => {
             try {
                 const dataToSend = {
@@ -478,11 +490,13 @@ async function saveProgressToGoogleSheets(action = 'update') {
                     subgroup: studentData.subgroup,
                     currentPart: savedPart, 
                     currentLevel: studentData.currentLevel || 0,
-                    experience: totalExperience,  // ← ОТПРАВЛЯЕМ ОПЫТ
+                    experience: totalExperience,          // ← Общий опыт
+                    lessonNumber: lessonNumber,          // ← Номер урока (1, 2, 3...)
+                    lessonExperience: lessonExperience,  // ← Опыт этого урока
                     lastLogin: new Date().toISOString()
                 };
 
-                fetch('https://script.google.com/macros/s/AKfycby4TbLPRdREI4e3tmGmFxnxFBbuNu1OzaCv_7DueSt5fvLFVVvEXo4pUbZmI4X_eF4j/exec', {
+                fetch('https://script.google.com/macros/s/AKfycbwbuz4SQ1d35hzYqlRyBwBGuForQlFG9KJkYRHL4VCG_vK2_vfpXyRy4jV0_AWs7_2V/exec', {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: {
