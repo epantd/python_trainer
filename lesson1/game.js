@@ -132,11 +132,6 @@ function calculateExperience() {
     completedLevels.push(levelKey);
     localStorage.setItem(completedKey, JSON.stringify(completedLevels));
     
-    // СОХРАНЯЕМ ОПЫТ СРАЗУ ПОСЛЕ РАСЧЕТА
-    setTimeout(async () => {
-        await saveProgressToGoogleSheets('update');
-        console.log('Опыт сохранен на сервер:', totalExperience);
-    }, 100);
     
     updateExperienceDisplay();
     
@@ -1098,6 +1093,7 @@ window.nextLevel = async function() {
     
     if (currentLevel + 1 < currentLevelList.length) {
         currentLevel++;
+        await saveProgressToGoogleSheets();
         startGame(currentLevel);
     } else {
         currentPart++;
