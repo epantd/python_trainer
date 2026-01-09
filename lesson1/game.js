@@ -59,10 +59,7 @@ function startLevelTracking() {
 function calculateExperience() {
     // ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН ДАННЫМ УЧЕНИКОМ
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
-    const lessonExpKey = `experience_lesson${LESSON_NUMBER}`;
-    const currentLessonExp = parseInt(localStorage.getItem(lessonExpKey) || '0');
-    const newLessonExp = currentLessonExp + earnedExp;
-    localStorage.setItem(lessonExpKey, newLessonExp.toString());
+
     
     // Создаем уникальный ключ для каждого ученика
     let studentIdentifier = 'anonymous';
@@ -121,6 +118,11 @@ function calculateExperience() {
     } else {
         console.log("❌ Время старта не установлено, пропускаем проверку времени");
     }
+
+    const lessonExpKey = `experience_lesson${LESSON_NUMBER}`;
+    const currentLessonExp = parseInt(localStorage.getItem(lessonExpKey) || '0');
+    const newLessonExp = currentLessonExp + earnedExp;
+    localStorage.setItem(lessonExpKey, newLessonExp.toString());
     
     totalExperience += earnedExp;
     
