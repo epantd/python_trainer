@@ -4,7 +4,7 @@ const LESSON_NUMBER = 2;
 // СИСТЕМА СОХРАНЕНИЯ ПРОГРЕССА
 // ===============================
 
-async function saveProgressToGoogleSheets(action = 'update') {
+async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
     try {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
@@ -12,48 +12,65 @@ async function saveProgressToGoogleSheets(action = 'update') {
             console.log('Нет данных ученика для сохранения');
             return true;
         }
-
+        
         // 🔧 ИСПРАВЛЕНИЕ: Используем ту же логику, что и в game1.js
         const savedPart = LESSON_NUMBER; // Для Урока 2 просто число 2
         
-        // ОБНОВЛЯЕМ ВСЕ ДАННЫЕ, ВКЛЮЧАЯ ОПЫТ
+        // 🆕 ВАЖНО: Обновляем текущие данные ученика
         studentData.currentPart = savedPart; // 🔧 Просто число
         studentData.currentLevel = currentLevel;
-        studentData.experience = totalExperience;
-        studentData.lastSave = new Date().toISOString();
-
-        // Сохраняем в localStorage (мгновенно)
+        studentData.lastLogin = new Date().toISOString();
+        
+        // 🆕 ВАЖНО: Сохраняем обновленные данные обратно
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
+        
+        // 🆕 Получаем общий опыт ученика
+        const totalExp = parseInt(localStorage.getItem('total_experience') || '0');
+        const newTotalExp = totalExp + earnedExp;
+        localStorage.setItem('total_experience', newTotalExp.toString());
+        
+        // 🆕 Получаем опыт этого урока
+        const lessonExpKey = `experience_lesson${LESSON_NUMBER}`;
+        const lessonExperience = parseInt(localStorage.getItem(lessonExpKey) || '0');
+        const newLessonExp = lessonExperience + earnedExp;
+        localStorage.setItem(lessonExpKey, newLessonExp.toString());
+        
+        // 🆕 ВАЖНО: Формируем правильный ключ уровня
+        const levelKey = `${LESSON_NUMBER}.${currentLevel}`;
+        
+        // Формируем данные для отправки
+        const dataToSend = {
+            action: 'save',
+            password: 'teacher123',
+            firstName: studentData.firstName,
+            lastName: studentData.lastName,
+            grade: studentData.grade,
+            classLetter: studentData.classLetter,
+            subgroup: studentData.subgroup,
+            currentPart: savedPart,  // 🔧 Число 2
+            currentLevel: currentLevel,        // 🆕 Актуальный номер уровня
+            earnedExp: earnedExp,              // 🆕 Фактически заработанный опыт
+            totalExperience: newTotalExp,      // 🆕 Общий опыт
+            lessonNumber: LESSON_NUMBER,       // 🆕 Номер урока (2)
+            levelKey: levelKey,                // 🆕 Ключ уровня "2.0", "2.1" и т.д.
+            lastLogin: studentData.lastLogin
+        };
 
-        // Отправляем на сервер ВСЕ ДАННЫЕ, ВКЛЮЧАЯ ОПЫТ
-        setTimeout(() => {
-            try {
-                const dataToSend = {
-                    action: 'save',
-                    password: 'teacher123',
-                    firstName: studentData.firstName,
-                    lastName: studentData.lastName,
-                    grade: studentData.grade,
-                    classLetter: studentData.classLetter,
-                    subgroup: studentData.subgroup,
-                    currentPart: savedPart, // 🔧 Используем исправленный формат
-                    currentLevel: studentData.currentLevel || 0,
-                    experience: totalExperience,
-                    lastLogin: new Date().toISOString()
-                };
-
-                fetch('https://script.google.com/macros/s/AKfycby7-PMwDOy11PysIDD0DSLkAcB7nq_fugQx6o92RPSYRRd-35Cp9XeC6noO-artX7XT/exec', {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(dataToSend)
-                });
-            } catch (e) {
-                console.log('Фоновое сохранение не удалось');
-            }
-        }, 50);
+        console.log('Отправляю данные на сервер:', dataToSend);
+        
+        // 🆕 ИСПРАВЛЕНИЕ: Используем тот же URL, что и в lesson1
+        fetch('https://script.google.com/macros/s/AKfycbzxAsVN4tNt0d6Uvm--n_vlypPDnflxEQpZ_IvMhEOOzq6KjBlMItvhdWQtB6pAMEJH/exec', {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend)
+        }).then(() => {
+            console.log('Данные отправлены на сервер');
+        }).catch(error => {
+            console.log('Ошибка отправки:', error);
+        });
 
         return true;
 
@@ -68,22 +85,26 @@ async function loadProgress() {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
         if (studentData) {
-            // Восстанавливаем опыт
+            // Восстанавливаем опыт из данных ученика
             if (studentData.experience) {
                 totalExperience = studentData.experience;
                 console.log('Опыт загружен:', totalExperience);
             }
 
-            // 🔧 ИСПРАВЛЕНИЕ: Теперь проверяем по-новому
+            // 🆕 ИСПРАВЛЕНИЕ: Теперь проверяем по-новому (совместимо с lesson1)
             const savedPart = studentData.currentPart;
             
-            // Проверяем, если это Урок 2 (просто число 2)
-            if (savedPart === LESSON_NUMBER && studentData.currentLevel !== undefined) {
-                console.log('Загружен уровень', studentData.currentLevel, 'для урока', LESSON_NUMBER);
-                return {
-                    success: true,
-                    currentLevel: studentData.currentLevel
-                };
+            // 🆕 Обрабатываем разные форматы savedPart
+            if (savedPart === LESSON_NUMBER || savedPart === LESSON_NUMBER.toString()) {
+                // Если сохранен Урок 2 (число 2 или строка "2")
+                if (studentData.currentLevel !== undefined) {
+                    console.log('Загружен уровень', studentData.currentLevel, 'для урока', LESSON_NUMBER);
+                    return {
+                        success: true,
+                        currentPart: LESSON_NUMBER,
+                        currentLevel: studentData.currentLevel
+                    };
+                }
             } else if (typeof savedPart === 'string' && savedPart.startsWith('1.')) {
                 // Если сохранен Урок 1, начинаем Урок 2 с 0
                 console.log('Обнаружен Урок 1. Начинаем Урок 2 с 0.');
@@ -94,6 +115,7 @@ async function loadProgress() {
 
         return {
             success: true,
+            currentPart: LESSON_NUMBER,
             currentLevel: 0
         };
 
@@ -101,14 +123,16 @@ async function loadProgress() {
         console.log('Ошибка при загрузке прогресса:', error);
         return {
             success: true,
+            currentPart: LESSON_NUMBER,
             currentLevel: 0
         };
     }
 }
 
 async function autoSaveProgress() {
-    await saveProgressToGoogleSheets('update');
+    await saveProgressToGoogleSheets('update', 0);
 }
+
 // --- Настройка DOM элементов ---
 // --- Настройка DOM элементов ---
 const canvas = document.getElementById('gameCanvas');
@@ -365,8 +389,27 @@ function startLevelTracking() {
     console.log(`[Опыт] Счетчик попыток сброшен: ${levelAttempts}`);
 }
 
-// Функция для расчета опыта при завершении уровня
+// Функция для расчета опыта при завершении уровня (ОБНОВЛЕНА)
 function calculateExperience() {
+    // 🆕 ПРОВЕРЯЕМ, БЫЛ ЛИ УРОВЕНЬ УЖЕ ПРОЙДЕН ДАННЫМ УЧЕНИКОМ
+    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    
+    // Создаем уникальный ключ для каждого ученика
+    let studentIdentifier = 'anonymous';
+    if (studentData && studentData.lastName && studentData.firstName && studentData.grade && studentData.classLetter && studentData.subgroup) {
+        studentIdentifier = `${studentData.lastName}_${studentData.firstName}_${studentData.grade}${studentData.classLetter}_${studentData.subgroup}`;
+    }
+    
+    const completedKey = `completed_levels_${studentIdentifier}_lesson${LESSON_NUMBER}`;
+    let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
+    
+    const levelKey = `${LESSON_NUMBER}.${currentLevel}`;
+    
+    if (completedLevels.includes(levelKey)) {
+        console.log(`[Опыт] Уровень ${levelKey} уже пройден этим учеником, опыт не начисляется`);
+        return 0;
+    }
+    
     let earnedExp = 0;
     let reasons = [];
     
@@ -379,8 +422,7 @@ function calculateExperience() {
     reasons.push("+1 за завершение уровня");
     console.log("✅ +1 за завершение уровня");
     
-    // 2. Бонус за малое количество попыток (≤ 3)
-    // 🆕 ИЗМЕНЕНО: считаем только попытки взаимодействия с Фараоном
+    // 2. Бонус за малое количество попыток (≤ 4)
     console.log(`Проверка попыток: ${levelAttempts} <= 4 ? ${levelAttempts <= 4}`);
     if (levelAttempts <= 4) {
         earnedExp += 1;
@@ -393,7 +435,7 @@ function calculateExperience() {
     // 3. Бонус за время (менее 3 минут)
     if (levelStartTime) {
         const timeSpent = Date.now() - levelStartTime;
-        const threeMinutes = 3 * 60 * 1000; // 3 минуты в миллисекундах
+        const threeMinutes = 3 * 60 * 1000;
         const secondsSpent = Math.floor(timeSpent / 1000);
         const minutesSpent = Math.floor(secondsSpent / 60);
         
@@ -411,13 +453,11 @@ function calculateExperience() {
         console.log("❌ Время старта не установлено, пропускаем проверку времени");
     }
     
-    totalExperience += earnedExp;
-    // СОХРАНЯЕМ ОПЫТ СРАЗУ ПОСЛЕ РАСЧЕТА
-    setTimeout(async () => {
-        await saveProgressToGoogleSheets('update');
-        console.log('Опыт сохранен на сервер:', totalExperience);
-    }, 100);
+    // 🆕 Добавляем уровень в пройденные ДЛЯ ЭТОГО УЧЕНИКА
+    completedLevels.push(levelKey);
+    localStorage.setItem(completedKey, JSON.stringify(completedLevels));
     
+    totalExperience += earnedExp;
     updateExperienceDisplay();
     
     // Выводим подробный отчет в консоль
@@ -865,45 +905,61 @@ window.hideIntroAndStart = async function() {
     
     gameMainTitle.textContent = 'Занятие 2';
     codeInput.placeholder = "move = int(input()), turn = input(), print(...) или go (для учителя)"; 
-     // Загружаем сохраненный прогресс
+    
+    // 🆕 Загружаем сохраненный прогресс
     const savedProgress = await loadProgress();
     if (savedProgress && savedProgress.success) {
         currentPart = savedProgress.currentPart || 2;
         currentLevel = savedProgress.currentLevel || 0;
         console.log('Прогресс загружен:', { currentPart, currentLevel, totalExperience });
     }
+    
+    // 🆕 Инициализируем опыт при загрузке
+    updateExperienceDisplay();
+    
     startGame(currentLevel);
-    saveProgressToGoogleSheets('login');
+    // 🆕 Сохраняем факт начала сессии без опыта
+    saveProgressToGoogleSheets('login', 0);
 }
 
 function showWinModal(isPartComplete = false, earnedExp = 0) {
     if (isPartComplete) {
         winModal.querySelector('#modal-title').textContent = "Занятие 2 пройдено!";
         winModal.querySelector('#modal-text').innerHTML = `Ты отлично справился с линейными алгоритмами! <br> Готов к следующему уроку: <strong>Условные операторы</strong>?<br><br>🎖️ <strong>Общий опыт за занятие: ${totalExperience}</strong>`;
+        // 🆕 Сохраняем прогресс без нового опыта при завершении занятия
+        setTimeout(async () => {
+            await saveProgressToGoogleSheets('update', 0);
+        }, 100);
     } else {
         winModal.querySelector('#modal-title').textContent = "Уровень пройден!";
         winModal.querySelector('#modal-text').innerHTML = `Правильно! Переходим к следующей задаче.<br><br>⭐ Получено опыта: +${earnedExp} (всего: ${totalExperience})`;
+        // 🆕 Сохраняем прогресс с заработанным опытом при завершении уровня
+        setTimeout(async () => {
+            await saveProgressToGoogleSheets('update', earnedExp);
+        }, 100);
     }
     
     document.getElementById('next-level-btn').style.display = 'inline-block'; 
     winModal.style.display = 'flex';
 }
 
-window.nextLevel = async function() { // Сделано глобальным
+window.nextLevel = async function() {
     winModal.style.display = 'none';
     
     if (currentLevel + 1 < PART_2_LEVELS.length) {
         currentLevel++;
-        await saveProgressToGoogleSheets('update');
+        // 🆕 Сохраняем прогресс без нового опыта при переходе на следующий уровень
+        await saveProgressToGoogleSheets('update', 0);
         startGame(currentLevel);
     } else {
         // Занятие 2 завершено
         currentPart = 3;
         currentLevel = 0;
-        await saveProgressToGoogleSheets('update');
+        // 🆕 Сохраняем прогресс без нового опыта при завершении занятия
+        await saveProgressToGoogleSheets('update', 0);
         showIntroScreen(); 
     }
-   updateReferenceContent();
+    updateReferenceContent();
 }
 
 window.restartLevel = function() { // Сделано глобальным
@@ -1752,9 +1808,32 @@ window.addEventListener('click', function(event) {
 lessonTitle.textContent = 'Курс "Основы Python"';
 showIntroScreen();
 
-// 🛑 ВАЖНО: Обработчик события, который привязывает функцию hideIntroAndStart к кнопке
-// Этот блок должен быть САМЫМ ПОСЛЕДНИМ в файле game.js.
 document.addEventListener('DOMContentLoaded', () => {
+    // Загружаем общий опыт из localStorage
+    const storedExp = localStorage.getItem('total_experience');
+    if (storedExp) {
+        totalExperience = parseInt(storedExp);
+        updateExperienceDisplay();
+    }
+    
+    // Проверяем, есть ли данные ученика
+    const studentData = JSON.parse(localStorage.getItem('currentStudent'));
+    if (studentData) {
+        // Если у ученика уже есть опыт в данных, используем его
+        if (studentData.experience && studentData.experience > totalExperience) {
+            totalExperience = studentData.experience;
+            updateExperienceDisplay();
+        }
+        
+        // Убеждаемся, что есть переменные для хранения опыта уроков
+        const lessonExpKey = `experience_lesson${LESSON_NUMBER}`;
+        const completedKey = `completed_levels_lesson${LESSON_NUMBER}`;
+        
+        if (!localStorage.getItem(lessonExpKey)) {
+            localStorage.setItem(lessonExpKey, '0');
+        }
+    }
+    
     // Получаем кнопку по ID, как она указана в index.html
     const startGameBtn = document.getElementById('start-game-btn');
     
