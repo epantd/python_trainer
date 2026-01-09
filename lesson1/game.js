@@ -454,9 +454,11 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         
         // Получаем текущий опыт ученика
         const currentStudentExp = studentData.experience || 0;
+        
+        // 🆕 ВАЖНО: Определяем newTotalExp ДО использования
         const newTotalExp = action === 'login' ? currentStudentExp : currentStudentExp + earnedExp;
         
-        // 🆕 Формат: "1.1", "1.2", "1.3"
+        // 🆕 ФОРМАТ: "1.1", "1.2", "1.3"
         const partKey = `1.${currentPart}`;
         
         // Обновляем данные ученика
@@ -2384,6 +2386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             totalExperience = studentData.experience;
             console.log('Опыт загружен из данных ученика:', totalExperience);
         }
+        
         
         // Создаем ключи для всех частей (1.1, 1.2, 1.3)
         for (let part = 1; part <= 3; part++) {
