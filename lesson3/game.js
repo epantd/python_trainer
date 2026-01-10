@@ -434,13 +434,13 @@ function calculateExperience() {
     console.log("✅ +1 за завершение уровня");
     
     // 2. Бонус за малое количество попыток (≤ 6 для Урока 3)
-     console.log(`Проверка попыток с Камнем: ${stoneInteractionAttempts} <= 6 ? ${stoneInteractionAttempts <= 6}`);
-    if (stoneInteractionAttempts <= 6) {
+     console.log(`Проверка попыток с Камнем: ${stoneInteractionAttempts} <= 3 ? ${stoneInteractionAttempts <= 3}`);
+    if (stoneInteractionAttempts <= 3) {
         earnedExp += 1;
         reasons.push(`+1 за малое количество попыток с Камнем (${stoneInteractionAttempts})`);
         console.log(`✅ +1 за малое количество попыток с Камнем (${stoneInteractionAttempts})`);
     } else {
-        console.log(`❌ Нет бонуса за попытки (${stoneInteractionAttempts} > 6)`);
+        console.log(`❌ Нет бонуса за попытки (${stoneInteractionAttempts} > 3)`);
     }
     
     // 3. Бонус за время (менее 3 минут)
