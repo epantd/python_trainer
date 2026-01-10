@@ -207,6 +207,37 @@ playerImage.onload = function() {
 const sourceSprite = new Image();
 sourceSprite.src = '../images/source-sprite.png'; // 🆕 Спрайт для источника
 
+function loadImageWithCache(url) {
+    return new Promise((resolve, reject) => {
+        const cached = localStorage.getItem(`image_${url}`);
+        if (cached) {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = cached;
+        } else {
+            const img = new Image();
+            img.onload = () => {
+                // Кешируем как Data URL (осторожно: может занять много памяти)
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                try {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    localStorage.setItem(`image_${url}`, dataUrl);
+                } catch (e) {
+                    console.warn('Не удалось кешировать изображение:', e);
+                }
+                resolve(img);
+            };
+            img.onerror = reject;
+            img.src = url;
+        }
+    });
+}
+
 // Константы анимации (добавьте в начало файла с другими константами)
 const SOURCE_TOTAL_FRAMES = 4;       // Источник: 16 кадров
 const FRAME_WIDTH = 1098;
