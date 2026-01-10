@@ -1,4 +1,4 @@
-const GAME_API_URL = 'https://script.google.com/macros/s/AKfycbzxAsVN4tNt0d6Uvm--n_vlypPDnflxEQpZ_IvMhEOOzq6KjBlMItvhdWQtB6pAMEJH/exec';
+const GAME_API_URL = 'https://script.google.com/macros/s/AKfycbxoK5UXPuAvv6aYDI_FLiJwdn2rdNXEFAIaVlL6T5OsrWa4KHuK16qinU-D0nnp-IkA/exec';
 const GAME_PASSWORD = 'teacher123';
 
 function getStudentIdentifier() {
@@ -73,7 +73,7 @@ function calculateExperience() {
     const levelKey = `${partKey}.${currentLevel + 1}`;
     
     if (completedLevels.includes(levelKey)) {
-        console.log(`[Опыт] Уровень ${levelKey} уже пройден, опыт не начисляется`);
+        console.log(`[Опыт] Уровень ${levelKey} уже пройден в части ${partKey}, опыт не начисляется`);
         return 0;
     }
     
@@ -498,6 +498,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             earnedExp: earnedExp,
             totalExperience: totalExperience,
             lessonNumber: 1,
+            partNumber: currentPart,
             levelKey: `${partKey}.${currentLevel + 1}`,
             lastLogin: studentData.lastLogin
         };
