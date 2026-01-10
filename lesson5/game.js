@@ -461,6 +461,37 @@ terminalSprite.onload = function() {
     drawGame(); 
 };
 
+function loadImageWithCache(url) {
+    return new Promise((resolve, reject) => {
+        const cached = localStorage.getItem(`image_${url}`);
+        if (cached) {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = cached;
+        } else {
+            const img = new Image();
+            img.onload = () => {
+                // Кешируем как Data URL (осторожно: может занять много памяти)
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                try {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    localStorage.setItem(`image_${url}`, dataUrl);
+                } catch (e) {
+                    console.warn('Не удалось кешировать изображение:', e);
+                }
+                resolve(img);
+            };
+            img.onerror = reject;
+            img.src = url;
+        }
+    });
+}
+
 // --- Параметры Игры и Уровней ---
 let currentPart = 5; // 🛑 ИЗМЕНЕНО: 3 -> 5
 let currentLevel = 0; 
