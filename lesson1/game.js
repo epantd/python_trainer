@@ -2435,6 +2435,239 @@ function updateReferenceContent() {
     }
 }
 
+// ===============================
+// ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ОПЫТА (НЕ ВЛИЯЮТ НА ОСНОВНУЮ ЛОГИКУ)
+// ===============================
+
+// Функция для создания индикатора нулевого опыта
+function createZeroExperienceIndicator() {
+    // Удаляем старый индикатор, если он есть
+    const oldIndicator = document.getElementById('zero-exp-indicator');
+    if (oldIndicator) {
+        oldIndicator.remove();
+    }
+    
+    // Создаем новый индикатор только если опыт = 0
+    if (totalExperience === 0) {
+        const indicator = document.createElement('div');
+        indicator.id = 'zero-exp-indicator';
+        indicator.title = "Ой-ой! Главное не переживайте! Что-то пошло не так и отображаемый опыт обнулился, но в системе все сохранилось как есть! Если переживаете, то можете перезайти в тренажер и убедиться, что с опытом все в порядке!";
+        
+        indicator.style.cssText = `
+            position: absolute;
+            top: 50%;
+            right: 35px;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: help;
+            font-size: 12px;
+            z-index: 1001;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        `;
+        
+        indicator.innerHTML = '!';
+        indicator.onmouseenter = function() {
+            this.style.transform = 'translateY(-50%) scale(1.2)';
+            this.style.backgroundColor = '#c0392b';
+        };
+        indicator.onmouseleave = function() {
+            this.style.transform = 'translateY(-50%)';
+            this.style.backgroundColor = '#e74c3c';
+        };
+        
+        // Добавляем индикатор к элементу опыта
+        const expElement = document.getElementById('experience-display');
+        if (expElement) {
+            expElement.style.position = 'relative';
+            expElement.appendChild(indicator);
+        }
+    }
+}
+
+// Функция для добавления кнопки обновления опыта
+function addRefreshExperienceButton() {
+    // Проверяем, есть ли уже кнопка
+    let refreshBtn = document.getElementById('refresh-experience-btn');
+    
+    if (!refreshBtn) {
+        // Создаем контейнер для кнопки
+        const container = document.createElement('div');
+        container.id = 'refresh-experience-container';
+        container.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        `;
+        
+        // Создаем саму кнопку
+        refreshBtn = document.createElement('button');
+        refreshBtn.id = 'refresh-experience-btn';
+        refreshBtn.textContent = '🔄 Обновить опыт';
+        refreshBtn.style.cssText = `
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        `;
+        
+        // Добавляем обработчик наведения
+        refreshBtn.onmouseenter = function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 5px 15px rgba(52, 152, 219, 0.4)';
+        };
+        
+        refreshBtn.onmouseleave = function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 3px 10px rgba(52, 152, 219, 0.3)';
+        };
+        
+        // Добавляем обработчик клика
+        refreshBtn.onclick = function() {
+            refreshExperienceFromServer();
+        };
+        
+        container.appendChild(refreshBtn);
+        document.body.appendChild(container);
+    }
+}
+
+// Функция для обновления опыта с сервера
+async function refreshExperienceFromServer() {
+    try {
+        const studentData = JSON.parse(localStorage.getItem('currentStudent'));
+        
+        if (!studentData) {
+            alert('❌ Не удалось обновить опыт: данные ученика не найдены');
+            return;
+        }
+        
+        // Показываем уведомление о начале обновления
+        const btn = document.getElementById('refresh-experience-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Загрузка...';
+        btn.disabled = true;
+        
+        // Загружаем данные с сервера
+        const serverData = await fetchStudentExperienceFromServer(studentData);
+        
+        if (serverData && serverData.success) {
+            // Обновляем глобальную переменную опыта
+            totalExperience = serverData.totalExperience || 0;
+            
+            // Обновляем данные ученика в localStorage
+            studentData.experience = totalExperience;
+            localStorage.setItem('currentStudent', JSON.stringify(studentData));
+            
+            // Обновляем отображение
+            updateExperienceDisplay();
+            
+            // Показываем успешное уведомление
+            showTemporaryMessage(`✅ Опыт обновлен! Текущий опыт: ${totalExperience}`, 'success');
+            
+            console.log(`[Опыт] Обновлен с сервера: ${totalExperience}`);
+        } else {
+            showTemporaryMessage('❌ Не удалось загрузить опыт с сервера', 'error');
+            console.log('[Опыт] Ошибка загрузки с сервера');
+        }
+        
+    } catch (error) {
+        console.error('[Опыт] Ошибка при обновлении опыта:', error);
+        showTemporaryMessage('❌ Ошибка при обновлении опыта', 'error');
+    } finally {
+        // Восстанавливаем кнопку
+        const btn = document.getElementById('refresh-experience-btn');
+        if (btn) {
+            btn.textContent = '🔄 Обновить опыт';
+            btn.disabled = false;
+        }
+    }
+}
+
+// Вспомогательная функция для показа временных сообщений
+function showTemporaryMessage(text, type = 'info') {
+    // Создаем элемент сообщения
+    const message = document.createElement('div');
+    message.textContent = text;
+    message.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    // Добавляем анимацию
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Добавляем на страницу
+    document.body.appendChild(message);
+    
+    // Удаляем через 3 секунды
+    setTimeout(() => {
+        message.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.parentNode.removeChild(message);
+            }
+            if (style.parentNode) {
+                style.parentNode.removeChild(style);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Обновляем функцию updateExperienceDisplay, чтобы добавить вызов индикатора
+const originalUpdateExperienceDisplay = updateExperienceDisplay;
+updateExperienceDisplay = function() {
+    originalUpdateExperienceDisplay();
+    createZeroExperienceIndicator();
+    addRefreshExperienceButton();
+};
+
+// Добавляем кнопку при загрузке страницы
+window.addEventListener('load', () => {
+    // Небольшая задержка для инициализации
+    setTimeout(() => {
+        addRefreshExperienceButton();
+    }, 1000);
+});
+
 // Открыть справочник
 document.getElementById('reference-button').addEventListener('click', function() {
     updateReferenceContent();
