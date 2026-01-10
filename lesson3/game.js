@@ -434,13 +434,13 @@ function calculateExperience() {
     console.log("✅ +1 за завершение уровня");
     
     // 2. Бонус за малое количество попыток (≤ 6 для Урока 3)
-    console.log(`Проверка попыток: ${levelAttempts} <= 6 ? ${levelAttempts <= 6}`);
-    if (levelAttempts <= 6) {
+     console.log(`Проверка попыток с Камнем: ${stoneInteractionAttempts} <= 6 ? ${stoneInteractionAttempts <= 6}`);
+    if (stoneInteractionAttempts <= 6) {
         earnedExp += 1;
-        reasons.push(`+1 за малое количество попыток (${levelAttempts})`);
-        console.log(`✅ +1 за малое количество попыток (${levelAttempts})`);
+        reasons.push(`+1 за малое количество попыток с Камнем (${stoneInteractionAttempts})`);
+        console.log(`✅ +1 за малое количество попыток с Камнем (${stoneInteractionAttempts})`);
     } else {
-        console.log(`❌ Нет бонуса за попытки (${levelAttempts} > 6)`);
+        console.log(`❌ Нет бонуса за попытки (${stoneInteractionAttempts} > 6)`);
     }
     
     // 3. Бонус за время (менее 3 минут)
@@ -554,8 +554,9 @@ if переменная_состояния == 'состояние':
 // --- Вспомогательная функция для генерации подсказок по операторам ---
 function getTaskHint(levelData) {
     let hint = `<p><b>Разговор с эссенцией</b> Используй print("Спросить")</p>`;
-    
-    
+    if (levelData.id === '3.1') {
+        hint += `<p><b>❗ ВНИМАНИЕ:</b> Для активации Камня используй приветственное слово <code>"Абракадабра"</code></p>`;
+    }
     hint += `<p><b>Возможные состояния (Камня):</b> ${levelData.possibleStates.join(', ')}</p>`;
     hint += `<p><b>Правильный ответ:</b> В зависимости от состояния, произнеси магическое слово (<code>print("Слово")</code>), чтобы Камень указал тебе Проход и Кодовое Слово для его открытия.`;
     return hint;
@@ -579,7 +580,7 @@ const PART_3_LEVELS = [
             'hot': 'Fireball',
             'cold': 'Freeze'
         },
-        description: "Камень может быть <b>'hot'</b> или <b>'cold'</b> (значение хранится в переменной `stone_temp`). Используй `if/else`, чтобы произнести магическое слово: <b>'Fireball'</b> (если `hot`) или <b>'Freeze'</b> (если `cold`).",
+        description: "<b>❗ Для активации Камня сначала произнеси приветственное слово: \"Абракадабра\"</b>. Камень может быть <b>'hot'</b> или <b>'cold'</b> (значение хранится в переменной stone_temp). Используй if/else, чтобы произнести магическое слово: <b>Fireball</b> (если `hot`) или <b>Freeze</b> (если `cold`). ",
         operators: ['<code>if:</code>', '<code>else:</code>', '<code>==</code>'],
         // 🛑 НОВОЕ: Переменная, которую использует игрок
         levelVariable: 'stone_temp', 
@@ -1171,6 +1172,7 @@ window.restartLevel = function() {
 
 function startGame(levelIndex) {
     startLevelTracking();
+    resetStoneInteractionAttempts();
     if (levelIndex < 0 || levelIndex >= PART_3_LEVELS.length) {
         messageElement.textContent = `Ошибка: Уровень ${levelIndex} не существует. Запущено Занятие 3.1.`;
         levelIndex = 0;
@@ -1257,13 +1259,14 @@ function checkCollision(x, y, entity) {
         Math.floor(y / gridSize) === Math.floor(entity.y / gridSize)
     );
 }
+let stoneInteractionAttempts = 0;
 
+function resetStoneInteractionAttempts() {
+    stoneInteractionAttempts = 0;
+}
 
 function handleTargetInteraction(code) {
     if (!currentLevelData) return false;
-    levelAttempts++;
-    console.log(`[Опыт] Попытка взаимодействия с Итоговой Сущностью №${levelAttempts}`);
-    
     // Очищаем сообщение, если оно было об Абракадабре, но игрок теперь ввел код.
     // Логика приветствия теперь в handlePrintForEntity
     
@@ -1653,12 +1656,14 @@ function handlePrintForEntity(line) {
                 // 🛑 CRITICAL CHECK 1: Enforce IF USAGE
                 if (!currentExecutionFlags.isConditional) {
                      messageElement.textContent = `Победа не засчитана! Ты произнес правильное слово ("${currentLevelData.correctCodeword}"), но должен был использовать условный оператор (if/elif/else), чтобы его выбрать. Код остановлен.`;
+                     stoneInteractionAttempts++;
                      return false; // Stop execution
                 }
                 
                 // 🛑 CRITICAL CHECK 2: Enforce VARIABLE USAGE
                 if (currentLevelData.levelVariable && !currentExecutionFlags.usedLevelVariable) {
                     messageElement.textContent = `Победа не засчитана! Ты произнес правильное слово, но должен был использовать переменную ${currentLevelData.levelVariable} в условии. Код остановлен.`;
+                    stoneInteractionAttempts++;
                     return false; // Stop execution
                 }
                 
@@ -1672,7 +1677,7 @@ function handlePrintForEntity(line) {
                 const stoneResponse = `Успех! Камень указал тебе на Проход ${requiredPassageIndex}. Кодовое Слово: "${requiredCodeword}". Теперь иди к Проходу и произнеси его.`;
                 consoleOutput += `[КАМЕНЬ]: ${stoneResponse}\n`;
                 outputDisplay.innerHTML = consoleOutput.replace(/\n/g, '<br>');
-                
+                stoneInteractionAttempts++;
                 messageElement.textContent = stoneResponse;
                 drawGame(); 
             } else {
