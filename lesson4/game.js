@@ -45,7 +45,7 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
         const levelKey = `${partKey}.${currentLevel + 1}`;
         
         // 🆕 Добавляем уровень в пройденные, если еще не добавлен
-        if (!completedLevels.includes(levelKey) && earnedExp > 0) {
+        if (!completedLevels.includes(levelKey) && earnedExp > 1) {
             completedLevels.push(levelKey);
             localStorage.setItem(completedKey, JSON.stringify(completedLevels));
         }
