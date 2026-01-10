@@ -813,8 +813,7 @@ function handleAnswer(selectedIndex, correctIndex) {
         }
     }
     
-    // ⬅️ ИЗМЕНЕНО: обновляем totalExperience с учетом дельты
-    totalExperience += questionExperienceDelta;
+
     updateExperienceDisplay();
 }
 
