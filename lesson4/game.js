@@ -770,6 +770,12 @@ function handleAnswer(selectedIndex, correctIndex) {
             feedbackElement.textContent = `✅ Правильно! +1 опыт за быстрый ответ!`;
             feedbackElement.className = 'success';
             console.log(`[Опыт] +1 за правильный ответ с первой попытки`);
+            
+            // 🆕 СОХРАНЯЕМ ОПЫТ СРАЗУ ПОСЛЕ НАЧИСЛЕНИЯ
+            setTimeout(async () => {
+                await saveProgressToGoogleSheets('save', 1); // Передаем earnedExp = 1
+                console.log('Опыт за менеджера паролей сохранен на сервер:', totalExperience);
+            }, 100);
         } else {
             feedbackElement.textContent = `✅ Правильно! Ответ найден с ${questionAttempts} попытки.`;
             feedbackElement.className = 'success';
@@ -812,6 +818,12 @@ function handleAnswer(selectedIndex, correctIndex) {
             feedbackElement.className = 'error';
             feedbackElement.style.display = 'block';
             returnButton.style.display = 'block'; // Показываем кнопку "Вернуться к уровню"
+            
+            // 🆕 СОХРАНЯЕМ ОПЫТ СРАЗУ ПОСЛЕ ВЫЧИТАНИЯ
+            setTimeout(async () => {
+                await saveProgressToGoogleSheets('save', -1); // Передаем earnedExp = -1
+                console.log('Опыт за менеджера паролей сохранен на сервер:', totalExperience);
+            }, 100);
         }
     }
     
