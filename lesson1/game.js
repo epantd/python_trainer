@@ -9,6 +9,8 @@ function getStudentIdentifier() {
     return 'anonymous';
 }
 
+
+
 const LESSON_NUMBER = 1;
 // ===============================
 // СИСТЕМА ОПЫТА
@@ -16,8 +18,6 @@ const LESSON_NUMBER = 1;
 let totalExperience = 0;
 let levelStartTime = null;
 let levelAttempts = 0;
-let isExperienceLoading = false; // Флаг загрузки опыта
-let sessionExperienceLoaded = false; // Флаг, что опыт уже загружен в этой сессии
 
 // Функция для обновления отображения опыта в сайдбаре
 function updateExperienceDisplay() {
@@ -48,7 +48,176 @@ function updateExperienceDisplay() {
         }
     }
     
-    document.getElementById('experience-display').textContent = `Опыт: ${totalExperience}`;
+    expElement.textContent = `Опыт: ${totalExperience}`;
+    
+    // Создаем или удаляем индикатор нулевого опыта
+    createZeroExperienceIndicator();
+    
+    // Добавляем кнопку обновления опыта, если ее нет
+    addRefreshExperienceButton();
+}
+
+// Функция для добавления кнопки обновления опыта
+function addRefreshExperienceButton() {
+    // Проверяем, есть ли уже кнопка
+    let refreshBtn = document.getElementById('refresh-experience-btn');
+    
+    if (!refreshBtn) {
+        // Создаем контейнер для кнопки
+        const container = document.createElement('div');
+        container.style.cssText = `
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        `;
+        
+        // Создаем саму кнопку
+        refreshBtn = document.createElement('button');
+        refreshBtn.id = 'refresh-experience-btn';
+        refreshBtn.textContent = '🔄 Обновить опыт';
+        refreshBtn.style.cssText = `
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        `;
+        
+        // Добавляем обработчик наведения
+        refreshBtn.onmouseenter = function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 5px 15px rgba(52, 152, 219, 0.4)';
+        };
+        
+        refreshBtn.onmouseleave = function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 3px 10px rgba(52, 152, 219, 0.3)';
+        };
+        
+        // Добавляем обработчик клика
+        refreshBtn.onclick = function() {
+            refreshExperienceFromServer();
+        };
+        
+        container.appendChild(refreshBtn);
+        
+        // Находим контейнер игры и добавляем кнопку
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            gameContainer.appendChild(container);
+        }
+    }
+}
+
+// Функция для обновления опыта с сервера
+async function refreshExperienceFromServer() {
+    try {
+        const studentData = JSON.parse(localStorage.getItem('currentStudent'));
+        
+        if (!studentData) {
+            alert('❌ Не удалось обновить опыт: данные ученика не найдены');
+            return;
+        }
+        
+        // Показываем уведомление о начале обновления
+        const btn = document.getElementById('refresh-experience-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Загрузка...';
+        btn.disabled = true;
+        
+        // Загружаем данные с сервера
+        const serverData = await fetchStudentExperienceFromServer(studentData);
+        
+        if (serverData && serverData.success) {
+            // Обновляем глобальную переменную опыта
+            totalExperience = serverData.totalExperience || 0;
+            
+            // Обновляем данные ученика в localStorage
+            studentData.experience = totalExperience;
+            localStorage.setItem('currentStudent', JSON.stringify(studentData));
+            
+            // Обновляем отображение
+            updateExperienceDisplay();
+            
+            // Показываем успешное уведомление
+            showTemporaryMessage(`✅ Опыт обновлен! Текущий опыт: ${totalExperience}`, 'success');
+            
+            console.log(`[Опыт] Обновлен с сервера: ${totalExperience}`);
+        } else {
+            showTemporaryMessage('❌ Не удалось загрузить опыт с сервера', 'error');
+            console.log('[Опыт] Ошибка загрузки с сервера');
+        }
+        
+    } catch (error) {
+        console.error('[Опыт] Ошибка при обновлении опыта:', error);
+        showTemporaryMessage('❌ Ошибка при обновлении опыта', 'error');
+    } finally {
+        // Восстанавливаем кнопку
+        const btn = document.getElementById('refresh-experience-btn');
+        if (btn) {
+            btn.textContent = '🔄 Обновить опыт';
+            btn.disabled = false;
+        }
+    }
+}
+
+// Вспомогательная функция для показа временных сообщений
+function showTemporaryMessage(text, type = 'info') {
+    // Создаем элемент сообщения
+    const message = document.createElement('div');
+    message.textContent = text;
+    message.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    // Добавляем анимацию
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Добавляем на страницу
+    document.body.appendChild(message);
+    
+    // Удаляем через 3 секунды
+    setTimeout(() => {
+        message.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.parentNode.removeChild(message);
+            }
+            if (style.parentNode) {
+                style.parentNode.removeChild(style);
+            }
+        }, 300);
+    }, 3000);
 }
 
 
@@ -58,67 +227,6 @@ function startLevelTracking() {
     levelAttempts = 0;
     console.log(`[Опыт] Начало отслеживания уровня в ${new Date(levelStartTime).toLocaleTimeString()}`);
     console.log(`[Опыт] Счетчик попыток сброшен: ${levelAttempts}`);
-}
-
-// Функция для проверки, пройден ли уровень
-function isLevelCompleted(part, level) {
-    const studentIdentifier = getStudentIdentifier();
-    const partKey = `1.${part}`;
-    const completedKey = `completed_levels_${studentIdentifier}_${partKey}`;
-    const levelKey = `${partKey}.${level + 1}`;
-    
-    let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
-    return completedLevels.includes(levelKey);
-}
-
-// Функция для фоновой загрузки опыта с сервера
-async function loadExperienceFromServerInBackground() {
-    if (isExperienceLoading || sessionExperienceLoaded) {
-        return; // Уже загружается или уже загружен
-    }
-    
-    const studentData = JSON.parse(localStorage.getItem('currentStudent'));
-    if (!studentData) {
-        return;
-    }
-    
-    isExperienceLoading = true;
-    
-    try {
-        // Показываем сообщение о загрузке только если это не мешает игровому процессу
-        const statusElement = document.getElementById('level-status');
-        if (statusElement) {
-            const originalText = statusElement.textContent;
-            statusElement.textContent = 'Загрузка может быть немного медленнее, загружаем опыт из системы...';
-            
-            // Через 2 секунды возвращаем оригинальный текст
-            setTimeout(() => {
-                if (statusElement.textContent.includes('Загрузка')) {
-                    statusElement.textContent = originalText;
-                }
-            }, 2000);
-        }
-        
-        const serverData = await fetchStudentExperienceFromServer(studentData);
-        
-        if (serverData && serverData.success) {
-            totalExperience = serverData.totalExperience || 0;
-            sessionExperienceLoaded = true;
-            
-            // Обновляем данные ученика в localStorage
-            studentData.experience = totalExperience;
-            localStorage.setItem('currentStudent', JSON.stringify(studentData));
-            
-            // Обновляем отображение опыта
-            updateExperienceDisplay();
-            
-            console.log('Опыт загружен с сервера в фоне:', totalExperience);
-        }
-    } catch (error) {
-        console.error('Ошибка при фоновой загрузке опыта:', error);
-    } finally {
-        isExperienceLoading = false;
-    }
 }
 
 // Функция для расчета опыта при завершении уровня
@@ -135,19 +243,9 @@ function calculateExperience() {
     
     const levelKey = `${partKey}.${currentLevel + 1}`;
     
-    // Проверяем, пройден ли уровень
     if (completedLevels.includes(levelKey)) {
         console.log(`[Опыт] Уровень ${levelKey} уже пройден, опыт не начисляется`);
-        
-        // Если уровень уже пройден, загружаем актуальный опыт из системы
-        if (!sessionExperienceLoaded) {
-            // Запускаем фоновую загрузку, но не блокируем основной поток
-            setTimeout(() => {
-                loadExperienceFromServerInBackground();
-            }, 100);
-        }
-        
-        return { earnedExp: 0, alreadyCompleted: true };
+        return 0;
     }
     
     console.log("=== РАСЧЕТ ОПЫТА ===");
@@ -175,6 +273,17 @@ function calculateExperience() {
         }
     }
     
+    // 🆕 ВАЖНОЕ ИЗМЕНЕНИЕ: Сохраняем в переменную, но не прибавляем к totalExperience здесь
+    // totalExperience будет обновляться после получения ответа от сервера
+    
+    // Обновляем данные ученика в localStorage (временное значение)
+    const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
+    if (studentData) {
+        // Временное значение для отображения
+        studentData.tempExperience = (studentData.experience || 0) + earnedExp;
+        localStorage.setItem('currentStudent', JSON.stringify(studentData));
+    }
+    
     // Добавляем уровень в пройденные
     completedLevels.push(levelKey);
     localStorage.setItem(completedKey, JSON.stringify(completedLevels));
@@ -182,65 +291,10 @@ function calculateExperience() {
     console.log(`=== ИТОГО ===`);
     console.log(`Получено опыта: ${earnedExp}`);
     console.log(`Причины: ${reasons.join(', ')}`);
-    console.log(`Новый общий опыт (временный): ${totalExperience + earnedExp}`);
+    console.log(`Новый общий опыт (временный): ${(totalExperience || 0) + earnedExp}`);
     console.log("===============");
     
-    return { earnedExp, alreadyCompleted: false };
-}
-
-// Обновленная функция startGame
-function startGame(levelIndex) {
-    startLevelTracking();
-    
-    variablesDisplay.style.display = 'none';
-    gameCanvas.style.display = 'none';
-    outputDisplay.style.display = 'none';
-    outputDisplay.innerHTML = '';
-    
-    // Сброс анимаций только для Урока 3, уровней 3.6-3.10
-    if (currentPart === 3 && levelIndex >= 5 && PART_3_LEVELS[levelIndex].type === 'combined') {
-        resetAnimations();
-    }
-    
-    levelStatusElement.style.display = 'block';
-    
-    // Проверяем, пройден ли уровень
-    const levelCompleted = isLevelCompleted(currentPart, levelIndex);
-    
-    if (levelCompleted && !sessionExperienceLoaded) {
-        // Если уровень уже пройден и опыт еще не загружен в этой сессии,
-        // запускаем фоновую загрузку опыта
-        loadExperienceFromServerInBackground();
-    }
-    
-    if (currentPart === 1) {
-        const levelData = PART_1_LEVELS[levelIndex];
-        updateLevelStatus(`${levelData.id}: ${levelData.name || 'Переменные и вывод данных'}`, 'Введите код в поле ниже');
-        startGamePart1(levelIndex);
-        outputDisplay.innerHTML = '--- Консоль вывода (print) ---<br>';
-        consoleOutput = "--- Консоль вывода (print) ---\n";
-    } else if (currentPart === 2) {
-        const levelData = PART_2_LEVELS[levelIndex];
-        updateLevelStatus(`Уровень ${levelData.id}`, 'Введите команды движения (move = int(input()) или turn = input())');
-        startGamePart2(levelIndex);
-        gameCanvas.style.display = 'block';
-    } else if (currentPart === 3) {
-        const levelData = PART_3_LEVELS[levelIndex];
-        if (levelData.checkType === 'linear_algo') {
-            updateLevelStatus(`${levelData.id}: ${levelData.name || 'Ввод и вывод данных'}`, 'Введите код с input() и print()');
-            startGamePart3LinearAlgo(levelIndex);
-            outputDisplay.style.display = 'block';
-            gameCanvas.style.display = 'block';
-        } else if (levelData.type === 'combined') {
-            updateLevelStatus(`Уровень ${levelData.id}`, 'Введите команды движения и print() для взаимодействия');
-            startGamePart3Combined(levelIndex);
-            gameCanvas.style.display = 'block';
-            outputDisplay.style.display = 'block';
-        }
-    }
-    
-    updateExperienceDisplay();
-    updateReferenceContent(); 
+    return earnedExp;
 }
 
 
@@ -575,6 +629,61 @@ function checkAllImagesLoaded() {
     }
 }
 
+// Функция для создания индикатора нулевого опыта
+function createZeroExperienceIndicator() {
+    // Удаляем старый индикатор, если он есть
+    const oldIndicator = document.getElementById('zero-exp-indicator');
+    if (oldIndicator) {
+        oldIndicator.remove();
+    }
+    
+    // Создаем новый индикатор только если опыт = 0
+    if (totalExperience === 0) {
+        const indicator = document.createElement('div');
+        indicator.id = 'zero-exp-indicator';
+        indicator.title = "Ой-ой! Главное не переживайте! Что-то пошло не так и отображаемый опыт обнулился, но в системе все сохранилось как есть! Если переживаете, то можете перезайти в тренажер и убедиться, что с опытом все в порядке!";
+        
+        indicator.style.cssText = `
+            position: absolute;
+            top: 50%;
+            right: 35px;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: help;
+            font-size: 12px;
+            z-index: 1001;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        `;
+        
+        indicator.innerHTML = '!';
+        indicator.onmouseenter = function() {
+            this.style.transform = 'translateY(-50%) scale(1.2)';
+            this.style.backgroundColor = '#c0392b';
+        };
+        indicator.onmouseleave = function() {
+            this.style.transform = 'translateY(-50%)';
+            this.style.backgroundColor = '#e74c3c';
+        };
+        
+        // Добавляем индикатор к элементу опыта
+        const expElement = document.getElementById('experience-display');
+        if (expElement) {
+            expElement.style.position = 'relative';
+            expElement.appendChild(indicator);
+        }
+    }
+}
+
+
 async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
     try {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
@@ -650,97 +759,55 @@ async function loadProgress() {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
         if (studentData) {
-            // Проверяем, нужно ли загружать опыт с сервера
-            // Загружаем только если в localStorage есть данные о пройденных уровнях
-            const studentIdentifier = getStudentIdentifier();
-            let hasCompletedLevels = false;
+            // 1. СНАЧАЛА пытаемся загрузить опыт из таблицы (как в магазине)
+            const serverData = await fetchStudentExperienceFromServer(studentData);
             
-            // Проверяем все части на наличие пройденных уровней
-            for (let part = 1; part <= 3; part++) {
-                const partKey = `1.${part}`;
-                const completedKey = `completed_levels_${studentIdentifier}_${partKey}`;
-                const completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
+            if (serverData && serverData.success) {
+                // Используем опыт с сервера
+                totalExperience = serverData.totalExperience || 0;
                 
-                if (completedLevels.length > 0) {
-                    hasCompletedLevels = true;
-                    break;
-                }
-            }
-            
-            if (hasCompletedLevels) {
-                // Если есть пройденные уровни, загружаем опыт с сервера
-                const serverData = await fetchStudentExperienceFromServer(studentData);
+                // Обновляем данные ученика в localStorage
+                studentData.experience = totalExperience;
                 
-                if (serverData && serverData.success) {
-                    // Используем опыт с сервера
-                    totalExperience = serverData.totalExperience || 0;
-                    sessionExperienceLoaded = true;
-                    
-                    // Обновляем данные ученика в localStorage
-                    studentData.experience = totalExperience;
-                    
-                    // Проверяем сохраненный прогресс (формат "1.1")
-                    if (serverData.currentPart && serverData.currentPart.startsWith('1.')) {
-                        try {
-                            const savedPart = serverData.currentPart;
-                            const partNumber = parseInt(savedPart.split('.')[1]);
+                // Проверяем сохраненный прогресс (формат "1.1")
+                if (serverData.currentPart && serverData.currentPart.startsWith('1.')) {
+                    try {
+                        const savedPart = serverData.currentPart;
+                        const partNumber = parseInt(savedPart.split('.')[1]);
+                        
+                        if (partNumber >= 1 && partNumber <= 3) {
+                            currentPart = partNumber;
+                            currentLevel = (serverData.currentLevel || 1) - 1;
                             
-                            if (partNumber >= 1 && partNumber <= 3) {
-                                currentPart = partNumber;
-                                currentLevel = (serverData.currentLevel || 1) - 1;
-                                
-                                console.log('Прогресс загружен с сервера:', {
-                                    totalExperience: totalExperience,
-                                    currentPart: currentPart,
-                                    currentLevel: currentLevel,
-                                    student: `${studentData.lastName} ${studentData.firstName}`
-                                });
-                            }
-                        } catch (e) {
-                            console.log('Ошибка при парсинге сохраненной части:', e);
+                            console.log('Прогресс загружен с сервера:', {
+                                totalExperience: totalExperience,
+                                currentPart: currentPart,
+                                currentLevel: currentLevel,
+                                student: `${studentData.lastName} ${studentData.firstName}`
+                            });
                         }
+                    } catch (e) {
+                        console.log('Ошибка при парсинге сохраненной части:', e);
                     }
-                    
-                    // Сохраняем обновленные данные
-                    localStorage.setItem('currentStudent', JSON.stringify(studentData));
-                    
-                    console.log('Опыт загружен с сервера:', totalExperience);
-                    
-                    return {
-                        success: true,
-                        currentPart: currentPart,
-                        currentLevel: currentLevel
-                    };
-                } else {
-                    // Если сервер не ответил, используем локальный опыт
-                    totalExperience = studentData.experience || 0;
-                    console.log('Опыт загружен из localStorage:', totalExperience);
-                    
-                    // Проверяем локальный прогресс
-                    if (studentData.currentPart && studentData.currentPart.startsWith('1.')) {
-                        try {
-                            const savedPart = studentData.currentPart;
-                            const partNumber = parseInt(savedPart.split('.')[1]);
-                            
-                            if (partNumber >= 1 && partNumber <= 3) {
-                                currentPart = partNumber;
-                                currentLevel = (studentData.currentLevel || 1) - 1;
-                            }
-                        } catch (e) {
-                            console.log('Ошибка при парсинге локальной части:', e);
-                        }
-                    }
-                    
-                    return {
-                        success: true,
-                        currentPart: currentPart,
-                        currentLevel: currentLevel
-                    };
                 }
+                
+                // Сохраняем обновленные данные
+                localStorage.setItem('currentStudent', JSON.stringify(studentData));
+                
+                console.log('Опыт загружен с сервера:', totalExperience);
+                
+                // Создаем индикатор нулевого опыта при необходимости
+                createZeroExperienceIndicator();
+                
+                return {
+                    success: true,
+                    currentPart: currentPart,
+                    currentLevel: currentLevel
+                };
             } else {
-                // Нет пройденных уровней, используем локальный опыт
+                // Если сервер не ответил, используем локальный опыт
                 totalExperience = studentData.experience || 0;
-                console.log('Нет пройденных уровней, опыт из localStorage:', totalExperience);
+                console.log('Опыт загружен из localStorage:', totalExperience);
                 
                 // Проверяем локальный прогресс
                 if (studentData.currentPart && studentData.currentPart.startsWith('1.')) {
@@ -757,6 +824,9 @@ async function loadProgress() {
                     }
                 }
                 
+                // Создаем индикатор нулевого опыта при необходимости
+                createZeroExperienceIndicator();
+                
                 return {
                     success: true,
                     currentPart: currentPart,
@@ -766,6 +836,8 @@ async function loadProgress() {
         } else {
             console.log('Нет данных ученика. Начинаем с начала.');
             totalExperience = 0;
+            // Создаем индикатор нулевого опыта при необходимости
+            createZeroExperienceIndicator();
         }
 
         return {
@@ -783,6 +855,7 @@ async function loadProgress() {
         };
     }
 }
+
 
 async function fetchStudentExperienceFromServer(studentData) {
     try {
@@ -1299,32 +1372,24 @@ window.hideIntroAndStart = async function() {
     
     // Сохраняем факт начала сессии
     saveProgressToGoogleSheets('login', 0);
+    
+    // Обновляем отображение опыта (включая кнопку и индикатор)
+    updateExperienceDisplay();
 };
 
 function showWinModal(isPartComplete = false) {
     // Расчет опыта при завершении уровня
-    const expResult = calculateExperience();
-    const earnedExp = expResult.earnedExp;
-    const alreadyCompleted = expResult.alreadyCompleted;
+    const earnedExp = calculateExperience();
     
-    // Обновляем totalExperience, только если уровень не был пройден ранее
-    if (!alreadyCompleted) {
-        totalExperience += earnedExp;
-    }
+    // 🆕 ВАЖНО: Обновляем totalExperience на основе earnedExp
+    totalExperience += earnedExp;
     
-    // Формируем сообщение об опыте
-    let expMessage = '';
-    if (alreadyCompleted) {
-        // Если уровень уже пройден, показываем только общий опыт
-        expMessage = `<br><br>Уровень уже пройден ранее. Общий опыт: ${totalExperience}`;
-    } else {
-        expMessage = isPartComplete 
-            ? `<br><br>🎖️ <strong>Общий опыт за занятие: ${totalExperience}</strong>`
-            : `<br><br>⭐ Получено опыта: +${earnedExp} (всего: ${totalExperience})`;
-    }
+    const expMessage = isPartComplete 
+        ? `<br><br>🎖️ <strong>Общий опыт за занятие: ${totalExperience}</strong>`
+        : `<br><br>⭐ Получено опыта: +${earnedExp} (всего: ${totalExperience})`;
     
-    // Сохраняем прогресс с полученным опытом (только для новых прохождений)
-    saveProgressToGoogleSheets('update', alreadyCompleted ? 0 : earnedExp);
+    // Сохраняем прогресс с полученным опытом
+    saveProgressToGoogleSheets('update', earnedExp);
     
     if (isPartComplete) {
         const nextPart = currentPart + 1;
@@ -1344,7 +1409,7 @@ function showWinModal(isPartComplete = false) {
     document.getElementById('next-level-btn').style.display = 'inline-block'; 
     winModal.style.display = 'flex';
     
-    // Обновляем отображение опыта
+    // Обновляем отображение опыта (включая индикатор и кнопку)
     updateExperienceDisplay();
 }
 
