@@ -189,19 +189,6 @@ background.onload = function() {
     drawGame(); 
 };
 
-
-const terminalImage = new Image();
-terminalImage.src = '../images4/terminal-data.png'; // 🛑 ИЗМЕНЕНО (Используется для Терминала и Бортового Компьютера)
-terminalImage.onload = function() { drawGame(); };
-
-const stoneImage = new Image();
-stoneImage.src = '../images4/stone.png'; // 🛑 ИЗМЕНЕНО (Используется для Терминала и Бортового Компьютера)
-stoneImage.onload = function() { drawGame(); };
-
-const sourceImage = new Image();
-sourceImage.src = '../images4/source-item.png'; // 🛑 ИЗМЕНЕНО (Используется для Менеджера Паролей)
-sourceImage.onload = function() { drawGame(); };
-
 const playerImage = new Image();
 playerImage.src = '../images4/player-main.png'; // 🛑 ИЗМЕНЕНО
 playerImage.onload = function() { drawGame(); };
@@ -371,6 +358,37 @@ function updateAnimations(currentTime) {
     });
     
     return true;
+}
+
+function loadImageWithCache(url) {
+    return new Promise((resolve, reject) => {
+        const cached = localStorage.getItem(`image_${url}`);
+        if (cached) {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = cached;
+        } else {
+            const img = new Image();
+            img.onload = () => {
+                // Кешируем как Data URL (осторожно: может занять много памяти)
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                try {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    localStorage.setItem(`image_${url}`, dataUrl);
+                } catch (e) {
+                    console.warn('Не удалось кешировать изображение:', e);
+                }
+                resolve(img);
+            };
+            img.onerror = reject;
+            img.src = url;
+        }
+    });
 }
 
 // Функция для отрисовки отладочной информации
