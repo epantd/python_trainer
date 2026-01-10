@@ -498,7 +498,6 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             earnedExp: earnedExp,
             totalExperience: totalExperience,
             lessonNumber: 1,
-            partNumber: currentPart,
             levelKey: `${partKey}.${currentLevel + 1}`,
             lastLogin: studentData.lastLogin
         };
