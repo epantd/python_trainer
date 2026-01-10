@@ -30,16 +30,13 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
         studentData.currentLevel = currentLevel;
         studentData.lastLogin = new Date().toISOString();
         
-        // 🆕 ВАЖНО: Рассчитываем новый опыт
-        const currentStudentExp = studentData.experience || 0;
-        const newStudentExp = action === 'login' ? currentStudentExp : currentStudentExp + earnedExp;
+        // 🆕 ВАЖНО: Берем опыт уже обновленный в calculateExperience()
+        // НЕ добавляем earnedExp снова, он уже добавлен к totalExperience
+        const currentStudentExp = totalExperience; // Используем текущий опыт
         
         // 🆕 Обновляем опыт в данных ученика
-        studentData.experience = newStudentExp;
+        studentData.experience = currentStudentExp;
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
-        
-        // 🆕 Обновляем глобальную переменную для отображения
-        totalExperience = newStudentExp;
         
         // 🆕 Формируем ключ для завершенных уровней ДЛЯ ЭТОГО УЧЕНИКА (как в уроке 1)
         const studentIdentifier = getStudentIdentifier();
@@ -49,7 +46,7 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
         const levelKey = `${partKey}.${currentLevel + 1}`;
         
         // 🆕 Добавляем уровень в пройденные, если еще не добавлен
-        if (!completedLevels.includes(levelKey)) {
+        if (!completedLevels.includes(levelKey) && earnedExp > 0) {
             completedLevels.push(levelKey);
             localStorage.setItem(completedKey, JSON.stringify(completedLevels));
         }
@@ -69,7 +66,7 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
             currentPart: partKey,           // "2.0"
             currentLevel: currentLevel + 1, // +1 для человекочитаемого формата        
             earnedExp: earnedExp,              
-            totalExperience: newStudentExp,
+            totalExperience: currentStudentExp,
             lessonNumber: 2,       
             partNumber: 0,                 // Часть урока 2 всегда 0
             levelKey: levelKeyForSheet,    // "2.0.1", "2.0.2" и т.д.              
@@ -474,15 +471,18 @@ function calculateExperience() {
     completedLevels.push(levelKey);
     localStorage.setItem(completedKey, JSON.stringify(completedLevels));
     
-    // 🆕 Обновляем общий опыт
+    // 🆕 Обновляем общий опыт (ТОЛЬКО ЗДЕСЬ!)
     totalExperience += earnedExp;
     
-    // Обновляем данные ученика
+    // Обновляем данные ученика в localStorage
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
     if (studentData) {
         studentData.experience = totalExperience;
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
     }
+    
+    // Обновляем отображение опыта
+    updateExperienceDisplay();
     
     // Выводим подробный отчет в консоль
     console.log(`=== ИТОГО ===`);
@@ -950,21 +950,18 @@ function showWinModal(isPartComplete = false, earnedExp = 0) {
     if (isPartComplete) {
         winModal.querySelector('#modal-title').textContent = "Занятие 2 пройдено!";
         winModal.querySelector('#modal-text').innerHTML = `Ты отлично справился с линейными алгоритмами! <br> Готов к следующему уроку: <strong>Условные операторы</strong>?<br><br>🎖️ <strong>Общий опыт за занятие: ${totalExperience}</strong>`;
-        // 🆕 Сохраняем прогресс при завершении занятия
-        setTimeout(async () => {
-            await saveProgressToGoogleSheets('save', 0);
-        }, 100);
     } else {
         winModal.querySelector('#modal-title').textContent = "Уровень пройден!";
         winModal.querySelector('#modal-text').innerHTML = `Правильно! Переходим к следующей задаче.<br><br>⭐ Получено опыта: +${earnedExp} (всего: ${totalExperience})`;
-        // 🆕 Сохраняем прогресс с заработанным опытом при завершении уровня
-        setTimeout(async () => {
-            await saveProgressToGoogleSheets('save', earnedExp);
-        }, 100);
     }
     
     document.getElementById('next-level-btn').style.display = 'inline-block'; 
     winModal.style.display = 'flex';
+    
+    // 🆕 Сохраняем прогресс ПОСЛЕ показа модального окна
+    setTimeout(async () => {
+        await saveProgressToGoogleSheets('save', earnedExp);
+    }, 100);
 }
 
 // Обновите функцию nextLevel
