@@ -2,6 +2,7 @@ const LESSON_NUMBER = 5;
 let questionExperienceDelta = 0; // Добавляем эту переменную
 
 // Добавить эту функцию в начало (перед системой сохранения)
+// Добавить эту функцию в начало (перед системой сохранения)
 function getStudentIdentifier() {
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
     if (studentData && studentData.lastName && studentData.firstName && studentData.grade && studentData.classLetter && studentData.subgroup) {
@@ -23,11 +24,11 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
             return true;
         }
         
-        // 🔧 ФОРМАТ КАК В УРОКЕ 4: "5.0" (урок.часть)
+        // 🔧 ФОРМАТ КАК В УРОКЕ 1: "4.0" (урок.часть)
         const partKey = `5.0`;
         
         // 🆕 Обновляем текущие данные ученика
-        studentData.currentPart = partKey; // Сохраняем как строку "5.0"
+        studentData.currentPart = partKey; // Сохраняем как строку "4.0"
         studentData.currentLevel = currentLevel;
         studentData.lastLogin = new Date().toISOString();
         
@@ -38,7 +39,7 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
         studentData.experience = currentStudentExp;
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
         
-        // 🆕 Формируем ключ для завершенных уровней ДЛЯ ЭТОГО УЧЕНИКА
+        // 🆕 Формируем ключ для завершенных уровней ДЛЯ ЭТОГО УЧЕНИКА (как в уроке 1)
         const studentIdentifier = getStudentIdentifier();
         const completedKey = `completed_levels_${studentIdentifier}_${partKey}`;
         let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
@@ -51,32 +52,32 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
             localStorage.setItem(completedKey, JSON.stringify(completedLevels));
         }
         
-        // 🆕 ВАЖНО: Формируем правильный ключ уровня
+        // 🆕 ВАЖНО: Формируем правильный ключ уровня (как в уроке 1)
         const levelKeyForSheet = `${partKey}.${currentLevel + 1}`;
         
-        // Формируем данные для отправки
+        // Формируем данные для отправки - ТАКИЕ ЖЕ КАК В game-2.js
         const dataToSend = {
-            action: 'save', // Всегда 'save'
+            action: 'save', // Всегда 'save' как в уроке 1
             password: 'teacher123',
             firstName: studentData.firstName,
             lastName: studentData.lastName,
             grade: studentData.grade,
             classLetter: studentData.classLetter,
             subgroup: studentData.subgroup,
-            currentPart: partKey,           // "5.0"
+            currentPart: partKey,           // "4.0"
             currentLevel: currentLevel + 1, // +1 для человекочитаемого формата        
             earnedExp: earnedExp,              
             totalExperience: currentStudentExp,
             lessonNumber: 5,       
-            partNumber: 0,                 // Часть урока 5 всегда 0
-            levelKey: levelKeyForSheet,    // "5.0.1", "5.0.2" и т.д.              
+            partNumber: 0,                 // Часть урока 4 всегда 0
+            levelKey: levelKeyForSheet,    // "4.0.1", "4.0.2" и т.д.              
             lastLogin: studentData.lastLogin
         };
 
         console.log('Отправляю данные на сервер:', dataToSend);
         
-        // 🆕 URL для урока 5
-        fetch('https://script.google.com/macros/s/AKfycby7-PMwDOy11PysIDD0DSLkAcB7nq_fugQx6o92RPSYRRd-35Cp9XeC6noO-artX7XT/exec', {
+        // 🆕 ИСПРАВЛЕНИЕ: Используем тот же URL, что и в game-2.js
+        fetch('https://script.google.com/macros/s/AKfycbzxAsVN4tNt0d6Uvm--n_vlypPDnflxEQpZ_IvMhEOOzq6KjBlMItvhdWQtB6pAMEJH/exec', {
             method: 'POST',
             mode: 'no-cors',
             headers: {
