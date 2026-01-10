@@ -1,4 +1,5 @@
 const LESSON_NUMBER = 4;
+let questionExperienceDelta = 0; 
 
 // Добавить эту функцию в начало (перед системой сохранения)
 function getStudentIdentifier() {
@@ -45,7 +46,7 @@ async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
         const levelKey = `${partKey}.${currentLevel + 1}`;
         
         // 🆕 Добавляем уровень в пройденные, если еще не добавлен
-        if (!completedLevels.includes(levelKey) && earnedExp > 1) {
+        if (!completedLevels.includes(levelKey) && earnedExp > 0) {
             completedLevels.push(levelKey);
             localStorage.setItem(completedKey, JSON.stringify(completedLevels));
         }
@@ -765,19 +766,18 @@ function handleAnswer(selectedIndex, correctIndex) {
         // Правильный ответ
         if (questionAttempts === 1) {
             // Первая попытка - +1 опыт
-            totalExperience += 1;
+            questionExperienceDelta += 1; // ⬅️ ИЗМЕНЕНО: не totalExperience напрямую
             questionExperienceAwarded = true;
             feedbackElement.textContent = `✅ Правильно! +1 опыт за быстрый ответ!`;
             feedbackElement.className = 'success';
             console.log(`[Опыт] +1 за правильный ответ с первой попытки`);
-			saveProgressToGoogleSheets('save', totalExperience);
         } else {
             feedbackElement.textContent = `✅ Правильно! Ответ найден с ${questionAttempts} попытки.`;
             feedbackElement.className = 'success';
         }
         
         feedbackElement.style.display = 'block';
-        returnButton.style.display = 'block'; // Показываем кнопку "Вернуться к уровню"
+        returnButton.style.display = 'block';
         
     } else {
         // Неправильный ответ
@@ -785,15 +785,12 @@ function handleAnswer(selectedIndex, correctIndex) {
             feedbackElement.textContent = `❌ Попробуй еще раз, ты пока не прошел поверку (попытка ${questionAttempts}/3)`;
             feedbackElement.className = 'error';
             feedbackElement.style.display = 'block';
-            returnButton.style.display = 'none'; // Не показываем кнопку
+            returnButton.style.display = 'none';
             
-            // Через 1.5 секунды показываем новый вопрос
             setTimeout(() => {
-                // Показываем новый вопрос
                 const newQuestion = getRandomQuestion();
                 document.getElementById('question-text').textContent = newQuestion.question;
                 
-                // Обновляем кнопки ответов
                 answersContainer.innerHTML = '';
                 newQuestion.answers.forEach((answer, index) => {
                     const button = document.createElement('button');
@@ -808,15 +805,16 @@ function handleAnswer(selectedIndex, correctIndex) {
             
         } else {
             // Третья неправильная попытка
-            totalExperience -= 1; // Вычитаем 1 (может быть отрицательным)
+            questionExperienceDelta -= 1; // ⬅️ ИЗМЕНЕНО: не totalExperience напрямую
             feedbackElement.textContent = `❌ В следующий раз будь внимательнее, у тебя точно получится. -1 опыт.`;
             feedbackElement.className = 'error';
             feedbackElement.style.display = 'block';
-            returnButton.style.display = 'block'; // Показываем кнопку "Вернуться к уровню"
-			saveProgressToGoogleSheets('save', totalExperience);
+            returnButton.style.display = 'block';
         }
     }
     
+    // ⬅️ ИЗМЕНЕНО: обновляем totalExperience с учетом дельты
+    totalExperience += questionExperienceDelta;
     updateExperienceDisplay();
 }
 
@@ -832,7 +830,7 @@ function givePassword() {
     
     consoleOutput += `\n> Менеджер Паролей: Приветственное слово для Бортового Компьютера: ${greeting}\n`;
     if (questionExperienceAwarded) {
-        consoleOutput += `> Менеджер Паролей: Отличные знания! +1 опыт!\n`;
+        consoleOutput += `> Менеджер Паролей: Отличные знания! Опыт будет начислен после завершения уровня!\n`;
         questionExperienceAwarded = false;
     }
     
@@ -930,14 +928,12 @@ function calculateExperience() {
     // Используем функцию getStudentIdentifier для уникальности ученика
     let studentIdentifier = getStudentIdentifier();
     
-    // 🆕 Ключ для завершенных уровней ДЛЯ ЭТОГО УЧЕНИКА (как в уроке 1)
     const partKey = '4.0';
     const completedKey = `completed_levels_${studentIdentifier}_${partKey}`;
     let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
     
     const levelKey = `${partKey}.${currentLevel + 1}`;
     
-    // 🆕 ПРОВЕРКА: если уровень уже пройден этим учеником, не даем опыт
     if (completedLevels.includes(levelKey)) {
         console.log(`[Опыт] Уровень ${levelKey} уже пройден этим учеником, опыт не начисляется`);
         return 0;
@@ -949,6 +945,7 @@ function calculateExperience() {
     console.log("=== РАСЧЕТ ОПЫТА ===");
     console.log(`Попыток взаимодействия с Фараоном: ${levelAttempts}`);
     console.log(`Время старта уровня: ${levelStartTime ? new Date(levelStartTime).toLocaleTimeString() : 'не установлено'}`);
+    console.log(`Опыт от вопроса: ${questionExperienceDelta}`);
     
     // 1. Базовый опыт за уровень
     earnedExp += 1;
@@ -985,13 +982,24 @@ function calculateExperience() {
         console.log("❌ Время старта не установлено, пропускаем проверку времени");
     }
     
+    // 🆕 4. Добавляем опыт от вопроса (если есть)
+    if (questionExperienceDelta !== 0) {
+        earnedExp += questionExperienceDelta;
+        if (questionExperienceDelta > 0) {
+            reasons.push(`+${questionExperienceDelta} за правильный ответ на вопрос`);
+            console.log(`✅ +${questionExperienceDelta} за правильный ответ на вопрос`);
+        } else {
+            reasons.push(`${questionExperienceDelta} за неправильный ответ на вопрос`);
+            console.log(`❌ ${questionExperienceDelta} за неправильный ответ на вопрос`);
+        }
+    }
+    
     // 🆕 Добавляем уровень в пройденные ДЛЯ ЭТОГО УЧЕНИКА
     completedLevels.push(levelKey);
     localStorage.setItem(completedKey, JSON.stringify(completedLevels));
     
-    // 🆕 Обновляем общий опыт (ТОЛЬКО ЗДЕСЬ!)
+    // 🆕 Обновляем общий опыт (уже включает опыт от вопроса)
     totalExperience += earnedExp;
-	saveProgressToGoogleSheets('save', totalExperience);
     
     // Обновляем данные ученика в localStorage
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
@@ -1002,6 +1010,9 @@ function calculateExperience() {
     
     // Обновляем отображение опыта
     updateExperienceDisplay();
+    
+    // Сбрасываем дельту опыта от вопроса
+    questionExperienceDelta = 0;
     
     // Выводим подробный отчет в консоль
     console.log(`=== ИТОГО ===`);
@@ -1554,6 +1565,7 @@ function startGame(levelIndex) {
     questionAttempts = 0;
     isQuestionModalOpen = false;
     questionExperienceAwarded = false;
+	questionExperienceDelta = 0; 
 
     if (levelIndex < 0 || levelIndex >= PART_4_LEVELS.length) { 
         messageElement.textContent = `Ошибка: Уровень ${levelIndex} не существует. Запущено Занятие 4.1.`; 
