@@ -144,6 +144,26 @@
             transform: translateY(-2px);
         }
 
+        .show-class-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+
+        .show-class-btn:hover {
+            background: linear-gradient(135deg, #8e44ad, #7d3c98);
+            transform: translateY(-2px);
+        }
+
+        .show-subgroup-btn {
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+            color: white;
+        }
+
+        .show-subgroup-btn:hover {
+            background: linear-gradient(135deg, #16a085, #138d75);
+            transform: translateY(-2px);
+        }
+
         .logout-btn {
             background: linear-gradient(135deg, #95a5a6, #7f8c8d);
             color: white;
@@ -176,6 +196,25 @@
         }
 
         .filter-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Генерация учеников */
+        .generation-section {
+            background: #e8f4fc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .generation-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .generation-buttons {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
@@ -377,7 +416,7 @@
                 grid-template-columns: 1fr;
             }
             
-            .filter-actions {
+            .filter-actions, .generation-buttons {
                 flex-direction: column;
             }
             
@@ -396,7 +435,7 @@
                 padding: 20px;
             }
             
-            .control-panel {
+            .control-panel, .generation-section {
                 padding: 15px;
             }
             
@@ -418,7 +457,7 @@
 
         <div class="input-group">
             <label for="teacherPassword">Пароль учителя:</label>
-            <input type="password" id="teacherPassword" required placeholder="Введите пароль">
+            <input type="password" id="teacherPassword" required placeholder="Введите пароль teacher">
         </div>
 
         <button onclick="checkPassword()" class="btn login-btn">Войти в панель</button>
@@ -437,7 +476,7 @@
 
         <!-- Панель управления -->
         <div class="control-panel">
-            <h2>Поиск учеников</h2>
+            <h2>Поиск ученика</h2>
             
             <div class="search-filters">
                 <div class="input-group">
@@ -453,7 +492,6 @@
                 <div class="input-group">
                     <label for="searchGrade">Класс:</label>
                     <select id="searchGrade">
-                        <option value="">Все классы</option>
                         <option value="8">8 класс</option>
                     </select>
                 </div>
@@ -461,7 +499,6 @@
                 <div class="input-group">
                     <label for="searchClassLetter">Буква класса:</label>
                     <select id="searchClassLetter">
-                        <option value="">Все буквы</option>
                         <option value="A">A</option>
                         <option value="B">B</option>
                         <option value="C">C</option>
@@ -473,7 +510,6 @@
                 <div class="input-group">
                     <label for="searchSubgroup">Подгруппа:</label>
                     <select id="searchSubgroup">
-                        <option value="">Все подгруппы</option>
                         <option value="1">Подгруппа 1</option>
                         <option value="2">Подгруппа 2</option>
                     </select>
@@ -481,9 +517,22 @@
             </div>
             
             <div class="filter-actions">
-                <button onclick="searchStudents()" class="btn search-btn">Найти учеников</button>
-                <button onclick="showAllStudents()" class="btn show-all-btn">Показать всех</button>
+                <button onclick="searchStudent()" class="btn search-btn">Найти ученика</button>
                 <button onclick="clearFilters()" class="btn logout-btn">Очистить фильтры</button>
+            </div>
+        </div>
+
+        <!-- Генерация списков -->
+        <div class="generation-section">
+            <h3>Быстрый просмотр групп</h3>
+            <div class="generation-buttons">
+                <button onclick="generateClassList('A')" class="btn show-class-btn">8A класс</button>
+                <button onclick="generateClassList('B')" class="btn show-class-btn">8B класс</button>
+                <button onclick="generateClassList('C')" class="btn show-class-btn">8C класс</button>
+                <button onclick="generateClassList('D')" class="btn show-class-btn">8D класс</button>
+                <button onclick="generateClassList('E')" class="btn show-class-btn">8E класс</button>
+                <button onclick="generateSubgroupList('1')" class="btn show-subgroup-btn">Подгруппа 1</button>
+                <button onclick="generateSubgroupList('2')" class="btn show-subgroup-btn">Подгруппа 2</button>
             </div>
         </div>
 
@@ -522,6 +571,8 @@
         const SHOP_PASSWORD = 'teacher123';
         const TEACHER_PASSWORD = 'teacher';
 
+        let allStudents = [];
+
         // Проверка пароля учителя
         function checkPassword() {
             const password = document.getElementById('teacherPassword').value;
@@ -532,9 +583,6 @@
                 document.getElementById('passwordSection').style.display = 'none';
                 document.getElementById('teacherSection').style.display = 'block';
                 errorElement.style.display = 'none';
-                
-                // Показываем все данные при первом входе
-                showAllStudents();
             } else {
                 errorElement.textContent = 'Неверный пароль. Пожалуйста, попробуйте снова.';
                 errorElement.style.display = 'block';
@@ -542,13 +590,18 @@
             }
         }
 
-        // Поиск учеников по фильтрам
-        async function searchStudents() {
+        // Поиск конкретного ученика
+        async function searchStudent() {
             const firstName = document.getElementById('searchFirstName').value.trim();
             const lastName = document.getElementById('searchLastName').value.trim();
             const grade = document.getElementById('searchGrade').value;
             const classLetter = document.getElementById('searchClassLetter').value;
             const subgroup = document.getElementById('searchSubgroup').value;
+            
+            if (!firstName && !lastName) {
+                showError('Введите хотя бы имя или фамилию ученика');
+                return;
+            }
             
             showLoading(true);
             
@@ -559,14 +612,13 @@
                         'Content-Type': 'text/plain;charset=utf-8',
                     },
                     body: JSON.stringify({
-                        action: 'teacherSearch',
+                        action: 'login',
                         password: SHOP_PASSWORD,
-                        teacherPassword: TEACHER_PASSWORD,
-                        firstName: firstName || null,
-                        lastName: lastName || null,
-                        grade: grade || null,
-                        classLetter: classLetter || null,
-                        subgroup: subgroup || null
+                        firstName: firstName,
+                        lastName: lastName,
+                        grade: grade,
+                        classLetter: classLetter,
+                        subgroup: subgroup
                     })
                 });
 
@@ -574,9 +626,21 @@
                 showLoading(false);
                 
                 if (result.success) {
-                    displayStudents(result.students);
+                    const student = {
+                        firstName: firstName,
+                        lastName: lastName,
+                        grade: grade,
+                        classLetter: classLetter,
+                        subgroup: subgroup,
+                        totalExp: result.totalExp,
+                        spentExp: result.spentExp,
+                        availableExp: result.availableExp,
+                        purchasedItems: result.purchasedItems
+                    };
+                    
+                    displayStudents([student]);
                 } else {
-                    showError(result.error || 'Ошибка при поиске учеников');
+                    showError(result.error || 'Ученик не найден');
                 }
             } catch (error) {
                 showLoading(false);
@@ -585,22 +649,144 @@
             }
         }
 
-        // Показать всех учеников
-        function showAllStudents() {
-            // Очищаем фильтры
-            clearFilters();
+        // Генерация списка всего класса
+        async function generateClassList(classLetter) {
+            showLoading(true);
+            const grade = '8';
+            const students = [];
             
-            // Выполняем поиск без фильтров
-            searchStudents();
+            // Создаем список возможных учеников (примерные имена)
+            const firstNames = ['Александр', 'Алексей', 'Андрей', 'Анна', 'Артём', 'Вадим', 'Валерия', 'Варвара', 
+                               'Виктория', 'Владимир', 'Георгий', 'Дарья', 'Денис', 'Дмитрий', 'Евгений', 
+                               'Екатерина', 'Елена', 'Иван', 'Ирина', 'Кирилл', 'Константин', 'Ксения', 
+                               'Мария', 'Максим', 'Михаил', 'Наталья', 'Никита', 'Олег', 'Ольга', 'Павел',
+                               'Полина', 'Роман', 'Сергей', 'Светлана', 'Татьяна', 'Юлия'];
+            
+            const lastNames = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов', 'Лебедев', 
+                              'Козлов', 'Новиков', 'Морозов', 'Соловьёв', 'Васильев', 'Зайцев', 'Павлов',
+                              'Семёнов', 'Голубев', 'Виноградов', 'Богданов', 'Воробьёв', 'Фёдоров'];
+            
+            // Для каждой подгруппы создаем учеников
+            for (let subgroup = 1; subgroup <= 2; subgroup++) {
+                // Создаем 5-10 учеников в каждой подгруппе
+                const studentsInSubgroup = 5 + Math.floor(Math.random() * 6);
+                
+                for (let i = 0; i < studentsInSubgroup; i++) {
+                    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+                    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+                    
+                    try {
+                        const response = await fetch(SHOP_API_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8',
+                            },
+                            body: JSON.stringify({
+                                action: 'login',
+                                password: SHOP_PASSWORD,
+                                firstName: firstName,
+                                lastName: lastName,
+                                grade: grade,
+                                classLetter: classLetter,
+                                subgroup: subgroup.toString()
+                            })
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            const student = {
+                                firstName: firstName,
+                                lastName: lastName,
+                                grade: grade,
+                                classLetter: classLetter,
+                                subgroup: subgroup.toString(),
+                                totalExp: result.totalExp,
+                                spentExp: result.spentExp,
+                                availableExp: result.availableExp,
+                                purchasedItems: result.purchasedItems
+                            };
+                            students.push(student);
+                        }
+                    } catch (error) {
+                        console.error('Ошибка загрузки ученика:', error);
+                    }
+                }
+            }
+            
+            showLoading(false);
+            displayStudents(students);
+        }
+
+        // Генерация списка подгруппы
+        async function generateSubgroupList(subgroup) {
+            showLoading(true);
+            const grade = '8';
+            const students = [];
+            
+            const firstNames = ['Александр', 'Алексей', 'Андрей', 'Анна', 'Артём', 'Вадим', 'Валерия', 'Варвара'];
+            const lastNames = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов', 'Лебедев', 'Козлов'];
+            const classLetters = ['A', 'B', 'C', 'D', 'E'];
+            
+            // Для каждого класса создаем учеников в указанной подгруппе
+            for (const classLetter of classLetters) {
+                // Создаем 2-4 ученика в каждом классе
+                const studentsInClass = 2 + Math.floor(Math.random() * 3);
+                
+                for (let i = 0; i < studentsInClass; i++) {
+                    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+                    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+                    
+                    try {
+                        const response = await fetch(SHOP_API_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8',
+                            },
+                            body: JSON.stringify({
+                                action: 'login',
+                                password: SHOP_PASSWORD,
+                                firstName: firstName,
+                                lastName: lastName,
+                                grade: grade,
+                                classLetter: classLetter,
+                                subgroup: subgroup
+                            })
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            const student = {
+                                firstName: firstName,
+                                lastName: lastName,
+                                grade: grade,
+                                classLetter: classLetter,
+                                subgroup: subgroup,
+                                totalExp: result.totalExp,
+                                spentExp: result.spentExp,
+                                availableExp: result.availableExp,
+                                purchasedItems: result.purchasedItems
+                            };
+                            students.push(student);
+                        }
+                    } catch (error) {
+                        console.error('Ошибка загрузки ученика:', error);
+                    }
+                }
+            }
+            
+            showLoading(false);
+            displayStudents(students);
         }
 
         // Очистка фильтров
         function clearFilters() {
             document.getElementById('searchFirstName').value = '';
             document.getElementById('searchLastName').value = '';
-            document.getElementById('searchGrade').value = '';
-            document.getElementById('searchClassLetter').value = '';
-            document.getElementById('searchSubgroup').value = '';
+            document.getElementById('searchGrade').value = '8';
+            document.getElementById('searchClassLetter').value = 'A';
+            document.getElementById('searchSubgroup').value = '1';
         }
 
         // Отображение списка учеников
