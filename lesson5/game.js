@@ -208,6 +208,43 @@ sourceSprite.src = '../images5/source-sprite.png'; // Для keeper
 const terminalSprite = new Image();
 terminalSprite.src = '../images5/terminal-sprite.png'; // Для terminal
 
+function preloadImages() {
+    const imageUrls = [
+        '../images5/game-bg.png',
+        '../images5/player-main.png',
+        '../images5/stone-sprite.png',
+        '../images5/source-sprite.png',
+        '../images5/terminal-sprite.png'
+    ];
+    
+    let loadedCount = 0;
+    const totalImages = imageUrls.length;
+    
+    imageUrls.forEach(url => {
+        const img = new Image();
+        img.onload = () => {
+            loadedCount++;
+            console.log(`Загружено: ${url} (${loadedCount}/${totalImages})`);
+            
+            // Обновляем прогресс загрузки (опционально)
+            if (typeof updateLoadingProgress === 'function') {
+                updateLoadingProgress(loadedCount, totalImages);
+            }
+            
+            if (loadedCount === totalImages) {
+                console.log('Все изображения загружены!');
+                // Автоматически перерисовываем игру после загрузки всех изображений
+                drawGame();
+            }
+        };
+        img.onerror = () => {
+            console.error(`Ошибка загрузки: ${url}`);
+            loadedCount++;
+        };
+        img.src = url;
+    });
+}
+
 // Константы анимации
 const STONE_TOTAL_FRAMES = 8;        // Pharaoh: 16 кадров
 const SOURCE_TOTAL_FRAMES = 7;       // Keeper: 16 кадров
@@ -1526,7 +1563,7 @@ window.hideIntroAndStart = async function() {
     outputDisplay.style.display = 'block';
     gameMainTitle.textContent = `Занятие ${currentPart}`;
     codeInput.placeholder = "print(...), move = int(input()), turn = input(), for i in range():...";
-    
+    preloadImages();
     // 🆕 Загружаем сохраненный прогресс
     const savedProgress = await loadProgress();
     if (savedProgress && savedProgress.success) {
@@ -2015,14 +2052,16 @@ function drawGame() {
                     entity.x, entity.y, PLAYER_SIZE, PLAYER_SIZE
                 );
             } else if (sprite) {
-                // Если спрайт еще не загружен, показываем запасное статичное изображение
-                if (entity.name_en === 'pharaoh' && stoneImage.complete) {
-                    ctx.drawImage(stoneImage, entity.x, entity.y, PLAYER_SIZE, PLAYER_SIZE);
-                } else if (entity.name_en === 'keeper' && sourceImage.complete) {
-                    ctx.drawImage(sourceImage, entity.x, entity.y, PLAYER_SIZE, PLAYER_SIZE);
-                } else if (entity.name_en === 'terminal' && terminalImage.complete) {
-                    ctx.drawImage(terminalImage, entity.x, entity.y, PLAYER_SIZE, PLAYER_SIZE);
-                }
+                 // Если спрайт не загружен, рисуем простую цветную заглушку
+                ctx.fillStyle = entity.name_en === 'pharaoh' ? '#8B4513' : 
+                                entity.name_en === 'keeper' ? '#2E8B57' : '#4682B4';
+                ctx.fillRect(entity.x, entity.y, PLAYER_SIZE, PLAYER_SIZE);
+                ctx.strokeStyle = '#000';
+                ctx.strokeRect(entity.x, entity.y, PLAYER_SIZE, PLAYER_SIZE);
+                ctx.fillStyle = '#FFF';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(entity.name_en, entity.x + PLAYER_SIZE/2, entity.y + PLAYER_SIZE/2);
             }
 
             // Отрисовка текста
