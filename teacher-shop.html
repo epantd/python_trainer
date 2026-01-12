@@ -318,6 +318,21 @@
             .teacher-panel {
                 padding: 20px;
             }
+            .add-exp-btn {
+                background: #2ecc71;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.9em;
+                margin-left: 5px;
+                transition: background 0.3s;
+            }
+            
+            .add-exp-btn:hover {
+                background: #27ae60;
+            }
         }
     </style>
 </head>
@@ -418,9 +433,12 @@
                             <th>Класс</th>
                             <th>Буква</th>
                             <th>Подгруппа</th>
+                            <th>Опыт из уроков</th>
+                            <th>Опыт от учителя</th>
                             <th>Общий опыт</th>
                             <th>Потрачено</th>
                             <th>Доступно</th>
+                            <th>Действия</th>
                             <th>Покупки</th>
                         </tr>
                     </thead>
@@ -439,7 +457,7 @@
     </div>
 
     <script>
-        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbydzcj_icRoNU_LI6woaVetKBv8zUrrrutjd4NLO4-XGm66X27r6ntY3JP8iMgCy1SzWw/exec';
+        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbzAiHmF4QN3uQcFc1kMrspaNrQFAkYdhLMZZSaCrLzz2-Yir67FJrBOt1H1CzIDd4o2Ew/exec';
         const TEACHER_PASSWORD = 'teacher'; // Пароль для учителя
 
         let allStudents = [];
@@ -517,11 +535,13 @@
         // Обновление статистики
         function updateStats() {
             const totalStudents = allStudents.length;
-            const totalExp = allStudents.reduce((sum, student) => sum + (student.totalExp || 0), 0);
+            const lessonsExp = allStudents.reduce((sum, student) => sum + (student.lessonsExp || 0), 0);
+            const teacherExp = allStudents.reduce((sum, student) => sum + (student.teacherExp || 0), 0);
+            const totalExp = lessonsExp + teacherExp;
             const totalSpent = allStudents.reduce((sum, student) => sum + (student.spentExp || 0), 0);
             const totalPurchases = allStudents.reduce((sum, student) => 
                 sum + (student.purchasedItems ? student.purchasedItems.length : 0), 0);
-
+        
             document.getElementById('totalStudents').textContent = totalStudents;
             document.getElementById('totalExp').textContent = totalExp;
             document.getElementById('totalSpent').textContent = totalSpent;
@@ -532,18 +552,18 @@
         function displayStudents() {
             const tbody = document.getElementById('studentsTableBody');
             tbody.innerHTML = '';
-
+        
             if (filteredStudents.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                        <td colspan="12" style="text-align: center; padding: 40px; color: #7f8c8d;">
                             Нет данных для отображения
                         </td>
                     </tr>
                 `;
                 return;
             }
-
+        
             filteredStudents.forEach(student => {
                 const row = tbody.insertRow();
                 
@@ -567,6 +587,20 @@
                 const subgroupCell = row.insertCell();
                 subgroupCell.textContent = student.subgroup || '';
                 
+                // Опыт из уроков
+                const lessonsExpCell = row.insertCell();
+                lessonsExpCell.innerHTML = `<span class="exp-badge">${student.lessonsExp || 0} XP</span>`;
+                
+                // Опыт от учителя
+                const teacherExpCell = row.insertCell();
+                teacherExpCell.innerHTML = `
+                    <span class="exp-badge" style="background: #f39c12;">${student.teacherExp || 0} XP</span>
+                    <button onclick="addExpPrompt('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}')" 
+                            style="margin-left: 5px; padding: 2px 8px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em;">
+                        +
+                    </button>
+                `;
+                
                 // Общий опыт
                 const totalExpCell = row.insertCell();
                 totalExpCell.innerHTML = `<span class="exp-badge">${student.totalExp || 0} XP</span>`;
@@ -578,6 +612,15 @@
                 // Доступно опыта
                 const availableExpCell = row.insertCell();
                 availableExpCell.innerHTML = `<span class="exp-badge">${student.availableExp || 0} XP</span>`;
+                
+                // Действия
+                const actionsCell = row.insertCell();
+                actionsCell.innerHTML = `
+                    <button onclick="addExpToStudent('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}')" 
+                            class="back-btn" style="padding: 5px 10px; font-size: 0.9em; background: #2ecc71;">
+                        Начислить опыт
+                    </button>
+                `;
                 
                 // Покупки
                 const purchasesCell = row.insertCell();
@@ -605,6 +648,55 @@
                 }
             });
         }
+
+        // Функция для начисления опыта
+        async function addExpToStudent(lastName, firstName, grade, classLetter) {
+            const amount = prompt(`Введите количество опыта для начисления ученику ${lastName} ${firstName}:`, "10");
+            
+            if (!amount || isNaN(amount) || amount <= 0) {
+                alert('Пожалуйста, введите корректное число');
+                return;
+            }
+            
+            try {
+                const response = await fetch(SHOP_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify({
+                        action: 'addTeacherExp',
+                        password: 'teacher123',
+                        lastName: lastName,
+                        firstName: firstName,
+                        grade: grade,
+                        classLetter: classLetter,
+                        amount: parseInt(amount)
+                    })
+                });
+        
+                const result = await response.json();
+        
+                if (result.success) {
+                    alert(result.message);
+                    loadAllStudents(); // Обновляем данные
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                alert('Ошибка подключения: ' + error);
+            }
+        }
+        
+        // Альтернативная функция с кнопками +10, +20, +50
+        function addExpPrompt(lastName, firstName, grade, classLetter) {
+            const amount = prompt(`Быстрое начисление для ${lastName} ${firstName}:\nВведите количество XP или выберите:\n1. 10 XP\n2. 20 XP\n3. 50 XP\n4. 100 XP`, "10");
+            
+            if (amount) {
+                addExpToStudent(lastName, firstName, grade, classLetter, amount);
+            }
+        }
+                
 
         // Настройка фильтров
         function setupFilters() {
