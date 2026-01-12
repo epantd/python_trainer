@@ -405,6 +405,14 @@
         <!-- Блок с опытом -->
         <div class="experience-info" id="experienceInfo">
             <div class="exp-item">
+                <span class="exp-value" id="lessonsExpValue">0</span>
+                <span class="exp-label">Опыт из уроков</span>
+            </div>
+            <div class="exp-item">
+                <span class="exp-value" id="teacherExpValue">0</span>
+                <span class="exp-label">Опыт от учителя</span>
+            </div>
+            <div class="exp-item">
                 <span class="exp-value" id="totalExpValue">0</span>
                 <span class="exp-label">Общий опыт</span>
             </div>
@@ -442,7 +450,7 @@
 
     <script>
         // URL вашего нового скрипта магазина (после развертывания)
-        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbydzcj_icRoNU_LI6woaVetKBv8zUrrrutjd4NLO4-XGm66X27r6ntY3JP8iMgCy1SzWw/exec';
+        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbzAiHmF4QN3uQcFc1kMrspaNrQFAkYdhLMZZSaCrLzz2-Yir67FJrBOt1H1CzIDd4o2Ew/exec';
         const SHOP_PASSWORD = 'teacher123';
 
         let currentStudent = null;
@@ -544,10 +552,12 @@
 
         // Обновление информации об ученике
         function updateStudentInfo(student) {
-            document.getElementById('totalExpValue').textContent = student.totalExp;
-            document.getElementById('spentExpValue').textContent = student.spentExp;
-            document.getElementById('availableExpValue').textContent = student.availableExp;
-
+            document.getElementById('lessonsExpValue').textContent = student.lessonsExp || 0;
+            document.getElementById('teacherExpValue').textContent = student.teacherExp || 0;
+            document.getElementById('totalExpValue').textContent = student.totalExp || 0;
+            document.getElementById('spentExpValue').textContent = student.spentExp || 0;
+            document.getElementById('availableExpValue').textContent = student.availableExp || 0;
+            
             // Обновляем список покупок
             updatePurchasesList(student.purchasedItems);
         }
