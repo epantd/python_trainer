@@ -509,7 +509,7 @@
 
     <script>
         // URL вашего нового скрипта магазина (после развертывания)
-        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbwJOnFR1xVmEzS6uKYAqStQp_w4vZ9QSxcc_MPAVDWBHgWrP7grMS5X0Ws1XLOkjsT9fQ/exec';
+        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbyJVGAzGyeIl8QixDiZ70tyr3MYJsIJURy7hSL-UPE6sS8lCNPvMiPs4FI53hKIgY4Gcg/exec';
         const SHOP_PASSWORD = 'teacher123';
 
         let currentStudent = null;
@@ -691,7 +691,9 @@
 
         // Создание элемента оценки
         function createGradeItem(item, container) {
-            const isOwned = currentStudent.purchasedItems.some(purchase => purchase.id === item.id);
+            const ownedCount = currentStudent.purchasedItems
+                .filter(purchase => purchase.id === item.id)
+                .length;
             const canAfford = currentStudent.availableExp >= item.price;
             const gradeNumber = item.name.match(/\d+/)?.[0] || '?';
             
@@ -703,7 +705,7 @@
             const itemElement = document.createElement('div');
             itemElement.className = 'shop-item';
             itemElement.innerHTML = `
-                ${isOwned ? '<div class="item-owned">Куплено</div>' : ''}
+                ${ownedCount > 0 ? `<div class="item-owned">Куплено: ${ownedCount}</div>` : ''}
                 <div class="item-header">
                     <div class="item-name" style="color: ${gradeNumber === '5' ? '#f39c12' : gradeNumber === '4' ? '#2ecc71' : '#3498db'};">
                         ${item.name}
@@ -713,8 +715,8 @@
                 <div class="item-description">${item.description}</div>
                 <button class="buy-btn" 
                         onclick="buyItem(${item.id})" 
-                        ${isOwned || !canAfford ? 'disabled' : ''}>
-                    ${isOwned ? 'Уже куплено' : canAfford ? 'Купить оценку' : 'Недостаточно опыта'}
+                        ${!canAfford ? 'disabled' : ''}>
+                    ${canAfford ? `Купить оценку (уже ${ownedCount})` : 'Недостаточно опыта'}
                 </button>
             `;
             
