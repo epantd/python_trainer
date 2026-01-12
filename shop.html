@@ -445,6 +445,9 @@
         <div id="shopSuccess" class="success-message"></div>
 
         <a href="index.html" class="back-btn">← Вернуться к урокам</a>
+        <button onclick="refreshStudentData()" class="back-btn" style="margin-left: 10px; background: #3498db;">
+        🔄 Обновить данные
+    </button>
         <button onclick="logoutShop()" class="back-btn" style="margin-left: 10px; background: #e74c3c;">Выйти</button>
     </div>
 
@@ -514,9 +517,11 @@
                         grade: grade,
                         classLetter: classLetter,
                         subgroup: subgroup,
-                        totalExp: result.totalExp,
-                        spentExp: result.spentExp,
-                        availableExp: result.availableExp,
+                        lessonsExp: result.lessonsExp || 0,  // Опыт из уроков
+                        teacherExp: result.teacherExp || 0,  // Опыт от учителя ← ДОБАВЬТЕ ЭТО!
+                        totalExp: result.totalExp || 0,      // Общий опыт
+                        spentExp: result.spentExp || 0,
+                        availableExp: result.availableExp || 0,
                         purchasedItems: result.purchasedItems,
                         studentRow: result.studentRow
                     };
@@ -539,25 +544,23 @@
 
         // Вход в магазин
         function enterShop(student) {
-            // Прячем форму, показываем магазин
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('shopSection').style.display = 'block';
-
-            // Обновляем данные
             updateStudentInfo(student);
-            
-            // Загружаем товары
             loadShopItems();
+            
+            // Обновляем данные каждые 30 секунд (на случай если учитель добавил опыт)
+            setInterval(refreshStudentData, 30000);
         }
 
         // Обновление информации об ученике
         function updateStudentInfo(student) {
-            document.getElementById('lessonsExpValue').textContent = student.lessonsExp || 0;
-            document.getElementById('teacherExpValue').textContent = student.teacherExp || 0;
-            document.getElementById('totalExpValue').textContent = student.totalExp || 0;
-            document.getElementById('spentExpValue').textContent = student.spentExp || 0;
-            document.getElementById('availableExpValue').textContent = student.availableExp || 0;
-            
+            document.getElementById('lessonsExpValue').textContent = student.lessonsExp;
+            document.getElementById('teacherExpValue').textContent = student.teacherExp;
+            document.getElementById('totalExpValue').textContent = student.totalExp;
+            document.getElementById('spentExpValue').textContent = student.spentExp;
+            document.getElementById('availableExpValue').textContent = student.availableExp;
+        
             // Обновляем список покупок
             updatePurchasesList(student.purchasedItems);
         }
@@ -638,13 +641,57 @@
             }).join('');
         }
 
+        // Функция для обновления данных ученика (например, если учитель добавил опыт)
+        async function refreshStudentData() {
+            if (!currentStudent) return;
+            
+            try {
+                const response = await fetch(SHOP_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify({
+                        action: 'getStudentInfo',
+                        password: SHOP_PASSWORD,
+                        firstName: currentStudent.firstName,
+                        lastName: currentStudent.lastName,
+                        grade: currentStudent.grade,
+                        classLetter: currentStudent.classLetter,
+                        subgroup: currentStudent.subgroup
+                    })
+                });
+        
+                const result = await response.json();
+        
+                if (result.success) {
+                    // Обновляем данные ученика
+                    currentStudent.lessonsExp = result.lessonsExp;
+                    currentStudent.teacherExp = result.teacherExp;
+                    currentStudent.totalExp = result.totalExp;
+                    currentStudent.spentExp = result.spentExp;
+                    currentStudent.availableExp = result.availableExp;
+                    currentStudent.purchasedItems = result.purchasedItems;
+        
+                    // Сохраняем в localStorage
+                    localStorage.setItem('shopStudent', JSON.stringify(currentStudent));
+        
+                    // Обновляем интерфейс
+                    updateStudentInfo(currentStudent);
+                    loadShopItems();
+                }
+            } catch (error) {
+                console.error('Ошибка обновления данных:', error);
+            }
+        }
+
         // Покупка товара
         async function buyItem(itemId) {
             if (!currentStudent) return;
-
+        
             const errorElement = document.getElementById('shopError');
             const successElement = document.getElementById('shopSuccess');
-
+        
             try {
                 const response = await fetch(SHOP_API_URL, {
                     method: 'POST',
@@ -662,27 +709,30 @@
                         subgroup: currentStudent.subgroup
                     })
                 });
-
+        
                 const result = await response.json();
-
+        
                 if (result.success) {
                     // Обновляем данные ученика
                     currentStudent.spentExp = result.newSpentExp;
                     currentStudent.availableExp = result.newAvailableExp;
                     currentStudent.purchasedItems = result.purchasedItems;
-
+                    
+                    // Обновляем общий опыт (вдруг изменился где-то еще)
+                    currentStudent.totalExp = currentStudent.lessonsExp + currentStudent.teacherExp;
+        
                     // Сохраняем в localStorage
                     localStorage.setItem('shopStudent', JSON.stringify(currentStudent));
-
+        
                     // Обновляем интерфейс
                     updateStudentInfo(currentStudent);
                     loadShopItems();
-
+        
                     // Показываем сообщение
                     successElement.textContent = result.message;
                     successElement.style.display = 'block';
                     errorElement.style.display = 'none';
-
+        
                     // Скрываем сообщение через 3 секунды
                     setTimeout(() => {
                         successElement.style.display = 'none';
