@@ -124,10 +124,13 @@
             display: flex;
             justify-content: space-around;
             text-align: center;
+            flex-wrap: wrap;
         }
 
         .exp-item {
             flex: 1;
+            min-width: 120px;
+            margin: 5px;
         }
 
         .exp-value {
@@ -192,6 +195,7 @@
             color: #7f8c8d;
             margin-bottom: 20px;
             font-size: 0.95em;
+            line-height: 1.4;
         }
 
         .buy-btn {
@@ -311,6 +315,42 @@
             background: #6c7a7d;
         }
 
+        /* Новый блок с информацией о минимальных покупках */
+        .min-purchases-warning {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #856404;
+        }
+
+        .min-purchases-warning h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .min-purchases-warning p {
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+
+        .grades-count {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 2px 8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .grades-count.good {
+            background: #27ae60;
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -323,6 +363,10 @@
             
             .shop-items {
                 grid-template-columns: 1fr;
+            }
+            
+            .exp-item {
+                min-width: 100px;
             }
         }
     </style>
@@ -424,10 +468,22 @@
                 <span class="exp-value" id="availableExpValue">0</span>
                 <span class="exp-label">Доступно</span>
             </div>
+            <div class="exp-item">
+                <span class="exp-value" id="gradesCountValue">0/5</span>
+                <span class="exp-label">Куплено оценок</span>
+            </div>
+        </div>
+
+        <!-- Предупреждение о минимальных покупках -->
+        <div class="min-purchases-warning" id="minPurchasesWarning">
+            <h4>⚠️ Важная информация!</h4>
+            <p>К концу четверти каждый ученик обязан купить минимум <strong>5 оценок</strong>.</p>
+            <p>Если куплено меньше 5 оценок, то будут автоматически выставлены двойки, чтобы общее количество оценок соответствовало норме.</p>
+            <p>Ваш прогресс: <span id="gradesProgress">0 из 5</span> <span id="gradesStatus" class="grades-count">МАЛО</span></p>
         </div>
 
         <!-- Товары -->
-        <h3 style="margin-bottom: 20px; color: #2c3e50;">Доступные товары</h3>
+        <h3 style="margin-bottom: 20px; color: #2c3e50;">Доступные оценки</h3>
         <div class="shop-items" id="shopItemsContainer">
             <!-- Товары будут загружены через JavaScript -->
         </div>
@@ -446,14 +502,14 @@
 
         <a href="index.html" class="back-btn">← Вернуться к урокам</a>
         <button onclick="refreshStudentData()" class="back-btn" style="margin-left: 10px; background: #3498db;">
-        🔄 Обновить данные
-    </button>
+            🔄 Обновить данные
+        </button>
         <button onclick="logoutShop()" class="back-btn" style="margin-left: 10px; background: #e74c3c;">Выйти</button>
     </div>
 
     <script>
         // URL вашего нового скрипта магазина (после развертывания)
-        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbzAiHmF4QN3uQcFc1kMrspaNrQFAkYdhLMZZSaCrLzz2-Yir67FJrBOt1H1CzIDd4o2Ew/exec';
+        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbwJOnFR1xVmEzS6uKYAqStQp_w4vZ9QSxcc_MPAVDWBHgWrP7grMS5X0Ws1XLOkjsT9fQ/exec';
         const SHOP_PASSWORD = 'teacher123';
 
         let currentStudent = null;
@@ -517,12 +573,12 @@
                         grade: grade,
                         classLetter: classLetter,
                         subgroup: subgroup,
-                        lessonsExp: result.lessonsExp || 0,  // Опыт из уроков
-                        teacherExp: result.teacherExp || 0,  // Опыт от учителя ← ДОБАВЬТЕ ЭТО!
-                        totalExp: result.totalExp || 0,      // Общий опыт
+                        lessonsExp: result.lessonsExp || 0,
+                        teacherExp: result.teacherExp || 0,
+                        totalExp: result.totalExp || 0,
                         spentExp: result.spentExp || 0,
                         availableExp: result.availableExp || 0,
-                        purchasedItems: result.purchasedItems,
+                        purchasedItems: result.purchasedItems || [],
                         studentRow: result.studentRow
                     };
 
@@ -549,7 +605,7 @@
             updateStudentInfo(student);
             loadShopItems();
             
-            // Обновляем данные каждые 30 секунд (на случай если учитель добавил опыт)
+            // Обновляем данные каждые 30 секунд
             setInterval(refreshStudentData, 30000);
         }
 
@@ -560,6 +616,27 @@
             document.getElementById('totalExpValue').textContent = student.totalExp;
             document.getElementById('spentExpValue').textContent = student.spentExp;
             document.getElementById('availableExpValue').textContent = student.availableExp;
+            
+            // Считаем количество купленных оценок
+            const gradeItems = student.purchasedItems.filter(item => 
+                item.name && item.name.includes('Оценка')
+            );
+            const gradesCount = gradeItems.length;
+            
+            // Обновляем счетчик оценок
+            document.getElementById('gradesCountValue').textContent = `${gradesCount}/5`;
+            
+            // Обновляем прогресс в предупреждении
+            document.getElementById('gradesProgress').textContent = `${gradesCount} из 5`;
+            
+            const gradesStatus = document.getElementById('gradesStatus');
+            if (gradesCount >= 5) {
+                gradesStatus.textContent = 'НОРМА';
+                gradesStatus.className = 'grades-count good';
+            } else {
+                gradesStatus.textContent = 'МАЛО';
+                gradesStatus.className = 'grades-count';
+            }
         
             // Обновляем список покупок
             updatePurchasesList(student.purchasedItems);
@@ -589,33 +666,59 @@
             }
         }
 
-        // Отображение товаров
+        // Отображение товаров (оценок)
         function displayShopItems(items) {
             const container = document.getElementById('shopItemsContainer');
             container.innerHTML = '';
 
-            items.forEach(item => {
-                const isOwned = currentStudent.purchasedItems.some(purchase => purchase.id === item.id);
-                const canAfford = currentStudent.availableExp >= item.price;
-                
-                const itemElement = document.createElement('div');
-                itemElement.className = 'shop-item';
-                itemElement.innerHTML = `
-                    ${isOwned ? '<div class="item-owned">Куплено</div>' : ''}
-                    <div class="item-header">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-price">${item.price} XP</div>
+            // Фильтруем только оценки
+            const gradeItems = items.filter(item => 
+                item.name && item.name.includes('Оценка')
+            );
+
+            // Если нет оценок, создаем их по умолчанию
+            if (gradeItems.length === 0) {
+                const defaultGrades = [
+                    { id: 1, name: "Оценка 5", price: 40, description: "Отличная оценка за 40 опыта. Минимум 5 оценок в четверти!", type: "grade" },
+                    { id: 2, name: "Оценка 4", price: 30, description: "Хорошая оценка за 30 опыта. Минимум 5 оценок в четверти!", type: "grade" },
+                    { id: 3, name: "Оценка 3", price: 20, description: "Удовлетворительная оценка за 20 опыта. Минимум 5 оценок в четверти!", type: "grade" }
+                ];
+                defaultGrades.forEach(item => createGradeItem(item, container));
+            } else {
+                gradeItems.forEach(item => createGradeItem(item, container));
+            }
+        }
+
+        // Создание элемента оценки
+        function createGradeItem(item, container) {
+            const isOwned = currentStudent.purchasedItems.some(purchase => purchase.id === item.id);
+            const canAfford = currentStudent.availableExp >= item.price;
+            const gradeNumber = item.name.match(/\d+/)?.[0] || '?';
+            
+            // Определяем цвет цены в зависимости от оценки
+            let priceColor = '#2ecc71'; // зеленый по умолчанию
+            if (gradeNumber === '5') priceColor = '#f39c12'; // оранжевый для 5
+            if (gradeNumber === '3') priceColor = '#3498db'; // синий для 3
+            
+            const itemElement = document.createElement('div');
+            itemElement.className = 'shop-item';
+            itemElement.innerHTML = `
+                ${isOwned ? '<div class="item-owned">Куплено</div>' : ''}
+                <div class="item-header">
+                    <div class="item-name" style="color: ${gradeNumber === '5' ? '#f39c12' : gradeNumber === '4' ? '#2ecc71' : '#3498db'};">
+                        ${item.name}
                     </div>
-                    <div class="item-description">${item.description}</div>
-                    <button class="buy-btn" 
-                            onclick="buyItem(${item.id})" 
-                            ${isOwned || !canAfford ? 'disabled' : ''}>
-                        ${isOwned ? 'Уже куплено' : canAfford ? 'Купить' : 'Недостаточно опыта'}
-                    </button>
-                `;
-                
-                container.appendChild(itemElement);
-            });
+                    <div class="item-price" style="background: ${priceColor};">${item.price} XP</div>
+                </div>
+                <div class="item-description">${item.description}</div>
+                <button class="buy-btn" 
+                        onclick="buyItem(${item.id})" 
+                        ${isOwned || !canAfford ? 'disabled' : ''}>
+                    ${isOwned ? 'Уже куплено' : canAfford ? 'Купить оценку' : 'Недостаточно опыта'}
+                </button>
+            `;
+            
+            container.appendChild(itemElement);
         }
 
         // Обновление списка покупок
@@ -627,13 +730,24 @@
                 return;
             }
 
-            container.innerHTML = purchases.map(purchase => {
-                const date = new Date(purchase.purchaseDate);
-                const formattedDate = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU');
+            // Сортируем покупки по дате (новые сверху)
+            const sortedPurchases = [...purchases].sort((a, b) => 
+                new Date(b.purchaseDate) - new Date(a.purchaseDate)
+            );
+
+            container.innerHTML = sortedPurchases.map(purchase => {
+                const date = purchase.purchaseDate ? new Date(purchase.purchaseDate) : new Date();
+                const formattedDate = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                
+                // Определяем цвет в зависимости от оценки
+                let gradeColor = '#2c3e50';
+                if (purchase.name && purchase.name.includes('5')) gradeColor = '#f39c12';
+                if (purchase.name && purchase.name.includes('4')) gradeColor = '#27ae60';
+                if (purchase.name && purchase.name.includes('3')) gradeColor = '#3498db';
                 
                 return `
                     <div class="purchase-item">
-                        <div class="purchase-name">${purchase.name}</div>
+                        <div class="purchase-name" style="color: ${gradeColor};">${purchase.name}</div>
                         <div class="purchase-date">${formattedDate}</div>
                         <div class="purchase-price">-${purchase.price} XP</div>
                     </div>
@@ -641,7 +755,7 @@
             }).join('');
         }
 
-        // Функция для обновления данных ученика (например, если учитель добавил опыт)
+        // Функция для обновления данных ученика
         async function refreshStudentData() {
             if (!currentStudent) return;
             
@@ -671,7 +785,7 @@
                     currentStudent.totalExp = result.totalExp;
                     currentStudent.spentExp = result.spentExp;
                     currentStudent.availableExp = result.availableExp;
-                    currentStudent.purchasedItems = result.purchasedItems;
+                    currentStudent.purchasedItems = result.purchasedItems || [];
         
                     // Сохраняем в localStorage
                     localStorage.setItem('shopStudent', JSON.stringify(currentStudent));
@@ -718,7 +832,7 @@
                     currentStudent.availableExp = result.newAvailableExp;
                     currentStudent.purchasedItems = result.purchasedItems;
                     
-                    // Обновляем общий опыт (вдруг изменился где-то еще)
+                    // Обновляем общий опыт
                     currentStudent.totalExp = currentStudent.lessonsExp + currentStudent.teacherExp;
         
                     // Сохраняем в localStorage
@@ -729,7 +843,8 @@
                     loadShopItems();
         
                     // Показываем сообщение
-                    successElement.textContent = result.message;
+                    const itemName = result.item?.name || 'Товар';
+                    successElement.textContent = `Вы успешно купили ${itemName}!`;
                     successElement.style.display = 'block';
                     errorElement.style.display = 'none';
         
