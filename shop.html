@@ -606,7 +606,7 @@
         const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbyJVGAzGyeIl8QixDiZ70tyr3MYJsIJURy7hSL-UPE6sS8lCNPvMiPs4FI53hKIgY4Gcg/exec';
         const SHOP_PASSWORD = 'teacher123';
 
-        let currentStudent = null;
+        let refreshTimer = null;
 
         // Проверяем, есть ли сохраненные данные в localStorage
         document.addEventListener('DOMContentLoaded', function() {
@@ -699,8 +699,8 @@
             updateStudentInfo(student);
             loadShopItems();
             
-            // Обновляем данные каждые 30 секунд
-            setInterval(refreshStudentData, 30000);
+            if (refreshTimer) clearInterval(refreshTimer); // Очищаем старый таймер
+            refreshTimer = setInterval(refreshStudentData, 30000);
         }
 
         // Обновление информации об ученике
@@ -853,8 +853,14 @@
 
         // Функция для обновления данных ученика
         async function refreshStudentData() {
-            if (!currentStudent) return;
-            
+             if (!currentStudent || currentStudent === null) {
+                console.log('Нет данных ученика, пропускаю обновление');
+                if (refreshTimer) {
+                    clearInterval(refreshTimer);
+                    refreshTimer = null;
+                }
+                return;
+            }
             try {
                 const response = await fetch(SHOP_API_URL, {
                     method: 'POST',
@@ -962,6 +968,11 @@
 
         // Выход из магазина
         function logoutShop() {
+            // Останавливаем таймер обновления
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
             localStorage.removeItem('shopStudent');
             currentStudent = null;
             
