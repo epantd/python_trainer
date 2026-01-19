@@ -694,13 +694,27 @@
 
         // Вход в магазин
         function enterShop(student) {
+            // Убедимся, что данные ученика валидны
+            if (!student) {
+                console.error('Нет данных ученика для входа в магазин');
+                return;
+            }
+            
+            // Обновляем глобальную переменную
+            currentStudent = student;
+            
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('shopSection').style.display = 'block';
+            
+            // Обновляем отображение информации об ученике
+            document.getElementById('studentInfo').textContent = `Ученик: ${student.firstName} ${student.lastName}`;
+            document.getElementById('currentStudentName').textContent = `${student.firstName} ${student.lastName}`;
+            
             updateStudentInfo(student);
             loadShopItems();
             
-            if (refreshTimer) clearInterval(refreshTimer); // Очищаем старый таймер
-            refreshTimer = setInterval(refreshStudentData, 30000);
+            // Обновляем данные каждые 30 секунд
+            setInterval(refreshStudentData, 30000);
         }
 
         // Обновление информации об ученике
@@ -737,7 +751,14 @@
         }
 
         // Загрузка товаров магазина
+        // Загрузка товаров магазина
         async function loadShopItems() {
+            // Проверяем, что ученик авторизован
+            if (!currentStudent) {
+                console.log('Нет текущего ученика для загрузки товаров');
+                return;
+            }
+            
             try {
                 const response = await fetch(SHOP_API_URL, {
                     method: 'POST',
@@ -749,11 +770,13 @@
                         password: SHOP_PASSWORD
                     })
                 });
-
+        
                 const result = await response.json();
-
+        
                 if (result.success) {
                     displayShopItems(result.items);
+                } else {
+                    console.error('Ошибка при получении товаров:', result.error);
                 }
             } catch (error) {
                 console.error('Ошибка загрузки товаров:', error);
@@ -761,15 +784,22 @@
         }
 
         // Отображение товаров (оценок)
+        // Отображение товаров (оценок)
         function displayShopItems(items) {
+            // Проверка currentStudent перед отображением
+            if (!currentStudent) {
+                console.error('currentStudent не определен при отображении товаров');
+                return;
+            }
+            
             const container = document.getElementById('shopItemsContainer');
             container.innerHTML = '';
-
+        
             // Фильтруем только оценки
             const gradeItems = items.filter(item => 
                 item.name && item.name.includes('Оценка')
             );
-
+        
             // Если нет оценок, создаем их по умолчанию
             if (gradeItems.length === 0) {
                 const defaultGrades = [
@@ -784,11 +814,21 @@
         }
 
         // Создание элемента оценки
+        // Создание элемента оценки
         function createGradeItem(item, container) {
-            const ownedCount = currentStudent.purchasedItems
-                .filter(purchase => purchase.id === item.id)
+            // Безопасная проверка свойств currentStudent
+            if (!currentStudent) {
+                console.error('currentStudent не определен в createGradeItem');
+                return;
+            }
+            
+            const purchasedItems = currentStudent.purchasedItems || [];
+            const ownedCount = purchasedItems
+                .filter(purchase => purchase && purchase.id === item.id)
                 .length;
-            const canAfford = currentStudent.availableExp >= item.price;
+            
+            const availableExp = currentStudent.availableExp || 0;
+            const canAfford = availableExp >= item.price;
             const gradeNumber = item.name.match(/\d+/)?.[0] || '?';
             
             // Определяем цвет цены в зависимости от оценки
@@ -816,7 +856,7 @@
             
             container.appendChild(itemElement);
         }
-
+        
         // Обновление списка покупок
         function updatePurchasesList(purchases) {
             const container = document.getElementById('purchasesList');
