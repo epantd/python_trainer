@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рейтинг учеников - Уроки Python</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px 15px 0 0;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #3498db;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #2980b9;
+        }
+
+        .content {
+            background: white;
+            border-radius: 0 0 15px 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-section {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .search-btn {
+            padding: 12px 25px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .search-btn:hover {
+            background: #27ae60;
+        }
+
+        .search-result {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-info h3 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .result-place {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .rating-title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 1.4em;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .rating-table {
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .place-cell {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            width: 70px;
+        }
+
+        .medal-gold {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .medal-silver {
+            background: linear-gradient(135deg, #C0C0C0, #808080);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .medal-bronze {
+            background: linear-gradient(135deg, #CD7F32, #8B4513);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .name-cell {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .experience-cell {
+            font-weight: bold;
+            color: #27ae60;
+            text-align: right;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header, .content {
+                padding: 20px;
+            }
+            
+            .search-container {
+                flex-direction: column;
+            }
+            
+            th, td {
+                padding: 10px 5px;
+                font-size: 14px;
+            }
+            
+            .place-cell {
+                width: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Рейтинг учеников</h1>
+            <p>Топ-10 по количеству опыта</p>
+            <a href="mainmenu.html" class="back-btn">← Вернуться в меню</a>
+        </div>
+
+        <div class="content">
+            <div class="search-section">
+                <h3>Поиск своего места в рейтинге</h3>
+                <div class="search-container">
+                    <input type="text" 
+                           id="searchLastName" 
+                           class="search-input" 
+                           placeholder="Введите вашу фамилию">
+                    <button id="searchBtn" class="search-btn">Найти</button>
+                </div>
+                <div id="searchResult" class="search-result">
+                    <div class="result-item">
+                        <div class="result-info">
+                            <h3 id="resultName"></h3>
+                            <div id="resultExperience"></div>
+                        </div>
+                        <div class="result-place" id="resultPlace"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rating-title">Топ-10 учеников</div>
+            
+            <div class="rating-table">
+                <table id="ratingTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">Место</th>
+                            <th>Фамилия и имя</th>
+                            <th style="text-align: right;">Опыт</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ratingTableBody">
+                        <!-- Данные будут загружаться сюда -->
+                    </tbody>
+                </table>
+                <div id="noRatingData" class="no-data">
+                    Загрузка рейтинга...
+                </div>
+            </div>
+
+            <button id="refreshBtn" class="refresh-btn">🔄 Обновить рейтинг</button>
+        </div>
+    </div>
+
+    <script>
+        // URL вашего Google Apps Script
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxoK5UXPuAvv6aYDI_FLiJwdn2rdNXEFAIaVlL6T5OsrWa4KHuK16qinU-D0nnp-IkA/exec';
+        const SCRIPT_PASSWORD = 'teacher123';
+
+        // Данные рейтинга
+        let allStudents = [];
+        let sortedStudents = [];
+
+        // Функция для загрузки данных с Google Sheets
+        async function loadStudentsFromServer() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify({
+                        action: 'getAll',
+                        password: SCRIPT_PASSWORD
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Данные с сервера:', result);
+
+                if (result.success && result.students) {
+                    return result.students;
+                } else {
+                    console.error('Ошибка загрузки данных:', result.error);
+                    return [];
+                }
+            } catch (error) {
+                console.error('Ошибка подключения к серверу:', error);
+                return [];
+            }
+        }
+
+        // Сортировка студентов по опыту (по убыванию)
+        function sortStudentsByExperience() {
+            sortedStudents = [...allStudents]
+                .filter(student => student.totalExperience && student.totalExperience > 0)
+                .sort((a, b) => (b.totalExperience || 0) - (a.totalExperience || 0));
+        }
+
+        // Получение места в рейтинге по фамилии
+        function getStudentPlace(lastName) {
+            const searchLastName = lastName.toLowerCase().trim();
+            
+            for (let i = 0; i < sortedStudents.length; i++) {
+                if (sortedStudents[i].lastName.toLowerCase().includes(searchLastName)) {
+                    return {
+                        place: i + 1,
+                        student: sortedStudents[i]
+                    };
+                }
+            }
+            
+            return null;
+        }
+
+        // Отображение рейтинга (только топ-10)
+        function renderRating() {
+            const tbody = document.getElementById('ratingTableBody');
+            const noDataMessage = document.getElementById('noRatingData');
+            
+            if (sortedStudents.length === 0) {
+                tbody.innerHTML = '';
+                noDataMessage.textContent = 'Нет данных для отображения рейтинга';
+                noDataMessage.style.display = 'block';
+                return;
+            }
+            
+            noDataMessage.style.display = 'none';
+            
+            // Берем только первые 10 мест
+            const top10 = sortedStudents.slice(0, 10);
+            
+            let html = '';
+            top10.forEach((student, index) => {
+                const place = index + 1;
+                let placeClass = '';
+                let placeText = place;
+                
+                // Определяем медали для первых трех мест
+                if (place === 1) {
+                    placeClass = 'medal-gold';
+                    placeText = '🥇 Золото';
+                } else if (place === 2) {
+                    placeClass = 'medal-silver';
+                    placeText = '🥈 Серебро';
+                } else if (place === 3) {
+                    placeClass = 'medal-bronze';
+                    placeText = '🥉 Бронза';
+                }
+                
+                html += `
+                    <tr>
+                        <td class="place-cell ${placeClass}">${placeText}</td>
+                        <td class="name-cell">${student.lastName || ''} ${student.firstName || ''}</td>
+                        <td class="experience-cell">${student.totalExperience || 0}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // Отображение результата поиска
+        function renderSearchResult(lastName) {
+            const result = getStudentPlace(lastName);
+            const searchResult = document.getElementById('searchResult');
+            const resultName = document.getElementById('resultName');
+            const resultExperience = document.getElementById('resultExperience');
+            const resultPlace = document.getElementById('resultPlace');
+            
+            if (result) {
+                const { place, student } = result;
+                resultName.textContent = `${student.lastName} ${student.firstName}`;
+                resultExperience.textContent = `Опыт: ${student.totalExperience || 0}`;
+                resultPlace.textContent = place;
+                
+                // Добавляем эмодзи для первых трех мест
+                if (place === 1) {
+                    resultPlace.innerHTML = '🥇 1';
+                } else if (place === 2) {
+                    resultPlace.innerHTML = '🥈 2';
+                } else if (place === 3) {
+                    resultPlace.innerHTML = '🥉 3';
+                }
+                
+                searchResult.style.display = 'block';
+            } else {
+                resultName.textContent = 'Ученик не найден';
+                resultExperience.textContent = 'Проверьте правильность ввода фамилии';
+                resultPlace.textContent = '-';
+                searchResult.style.display = 'block';
+            }
+        }
+
+        // Загрузка и обновление данных
+        async function loadData() {
+            try {
+                const students = await loadStudentsFromServer();
+                allStudents = students;
+                sortStudentsByExperience();
+                renderRating();
+                
+                // Очищаем результаты поиска при обновлении
+                document.getElementById('searchResult').style.display = 'none';
+                document.getElementById('searchLastName').value = '';
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                document.getElementById('noRatingData').textContent = 'Ошибка загрузки данных. Попробуйте обновить страницу.';
+            }
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Загружаем данные
+            await loadData();
+            
+            // Обработчики событий
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                const lastName = document.getElementById('searchLastName').value;
+                if (lastName.trim()) {
+                    renderSearchResult(lastName);
+                }
+            });
+            
+            // Поиск по нажатию Enter
+            document.getElementById('searchLastName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const lastName = this.value;
+                    if (lastName.trim()) {
+                        renderSearchResult(lastName);
+                    }
+                }
+            });
+            
+            // Кнопка обновления
+            document.getElementById('refreshBtn').addEventListener('click', loadData);
+            
+            // Автообновление каждые 60 секунд
+            setInterval(loadData, 60000);
+        });
+    </script>
+</body>
+</html>
