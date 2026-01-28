@@ -63,9 +63,7 @@ function calculateExperience() {
     let earnedExp = 0;
     let reasons = [];
 
-    // Получаем идентификатор ученика
-    let studentIdentifier = getStudentIdentifier();
-    
+    const studentIdentifier = getStudentIdentifier();
     const partKey = `1.${currentPart}`;
     const completedKey = `completed_levels_${studentIdentifier}_${partKey}`;
     let completedLevels = JSON.parse(localStorage.getItem(completedKey) || '[]');
@@ -73,7 +71,7 @@ function calculateExperience() {
     const levelKey = `${partKey}.${currentLevel + 1}`;
     
     if (completedLevels.includes(levelKey)) {
-        console.log(`[Опыт] Уровень ${levelKey} уже пройден в части ${partKey}, опыт не начисляется`);
+        console.log(`[Опыт] Уровень ${levelKey} уже пройден, опыт не начисляется`);
         return 0;
     }
     
@@ -102,8 +100,6 @@ function calculateExperience() {
         }
     }
     
-    // 🆕 ВАЖНОЕ ИЗМЕНЕНИЕ: Сохраняем в переменную, но не прибавляем к totalExperience здесь
-    // totalExperience будет обновляться после получения ответа от сервера
     // 🆕 ОБНОВЛЯЕМ totalExperience СРАЗУ
     const oldTotalExp = totalExperience;
     totalExperience += earnedExp;
@@ -469,6 +465,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             return true;
         }
         
+        // Используем глобальную переменную totalExperience, которая уже обновлена
         const currentStudentExp = totalExperience;
         
         const partKey = `1.${currentPart}`;
@@ -476,7 +473,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         // Обновляем данные ученика
         studentData.currentPart = partKey;
         studentData.currentLevel = currentLevel + 1;
-        studentData.experience = totalExperience;
+        studentData.experience = currentStudentExp;
         studentData.lastLogin = new Date().toISOString();
         
         // Сохраняем обновленные данные
@@ -531,74 +528,30 @@ async function loadProgress() {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
         if (studentData) {
-            // 1. СНАЧАЛА пытаемся загрузить опыт из таблицы (как в магазине)
-            const serverData = await fetchStudentExperienceFromServer(studentData);
+            // Загружаем опыт из localStorage (он уже должен быть актуальным)
+            totalExperience = studentData.experience || 0;
+            console.log('Опыт загружен из localStorage:', totalExperience);
             
-            if (serverData && serverData.success) {
-                // Используем опыт с сервера
-                totalExperience = serverData.totalExperience || 0;
-                
-                // Обновляем данные ученика в localStorage
-                studentData.experience = totalExperience;
-                
-                // Проверяем сохраненный прогресс (формат "1.1")
-                if (serverData.currentPart && serverData.currentPart.startsWith('1.')) {
-                    try {
-                        const savedPart = serverData.currentPart;
-                        const partNumber = parseInt(savedPart.split('.')[1]);
-                        
-                        if (partNumber >= 1 && partNumber <= 3) {
-                            currentPart = partNumber;
-                            currentLevel = (serverData.currentLevel || 1) - 1;
-                            
-                            console.log('Прогресс загружен с сервера:', {
-                                totalExperience: totalExperience,
-                                currentPart: currentPart,
-                                currentLevel: currentLevel,
-                                student: `${studentData.lastName} ${studentData.firstName}`
-                            });
-                        }
-                    } catch (e) {
-                        console.log('Ошибка при парсинге сохраненной части:', e);
+            // Проверяем локальный прогресс
+            if (studentData.currentPart && studentData.currentPart.startsWith('1.')) {
+                try {
+                    const savedPart = studentData.currentPart;
+                    const partNumber = parseInt(savedPart.split('.')[1]);
+                    
+                    if (partNumber >= 1 && partNumber <= 3) {
+                        currentPart = partNumber;
+                        currentLevel = (studentData.currentLevel || 1) - 1;
                     }
+                } catch (e) {
+                    console.log('Ошибка при парсинге локальной части:', e);
                 }
-                
-                // Сохраняем обновленные данные
-                localStorage.setItem('currentStudent', JSON.stringify(studentData));
-                
-                console.log('Опыт загружен с сервера:', totalExperience);
-                
-                return {
-                    success: true,
-                    currentPart: currentPart,
-                    currentLevel: currentLevel
-                };
-            } else {
-                // Если сервер не ответил, используем локальный опыт
-                totalExperience = studentData.experience || 0;
-                console.log('Опыт загружен из localStorage:', totalExperience);
-                
-                // Проверяем локальный прогресс
-                if (studentData.currentPart && studentData.currentPart.startsWith('1.')) {
-                    try {
-                        const savedPart = studentData.currentPart;
-                        const partNumber = parseInt(savedPart.split('.')[1]);
-                        
-                        if (partNumber >= 1 && partNumber <= 3) {
-                            currentPart = partNumber;
-                            currentLevel = (studentData.currentLevel || 1) - 1;
-                        }
-                    } catch (e) {
-                        console.log('Ошибка при парсинге локальной части:', e);
-                    }
-                }
-                
-                return {
-                    success: true,
-                    currentPart: currentPart,
-                    currentLevel: currentLevel
-                };
             }
+            
+            return {
+                success: true,
+                currentPart: currentPart,
+                currentLevel: currentLevel
+            };
         } else {
             console.log('Нет данных ученика. Начинаем с начала.');
             totalExperience = 0;
@@ -1140,9 +1093,6 @@ window.hideIntroAndStart = async function() {
 function showWinModal(isPartComplete = false) {
     // Расчет опыта при завершении уровня
     const earnedExp = calculateExperience();
-    
-    // 🆕 ВАЖНО: Обновляем totalExperience на основе earnedExp
-    totalExperience += earnedExp;
     
     const expMessage = isPartComplete 
         ? `<br><br>🎖️ <strong>Общий опыт за занятие: ${totalExperience}</strong>`
