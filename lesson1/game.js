@@ -104,24 +104,26 @@ function calculateExperience() {
     
     // 🆕 ВАЖНОЕ ИЗМЕНЕНИЕ: Сохраняем в переменную, но не прибавляем к totalExperience здесь
     // totalExperience будет обновляться после получения ответа от сервера
+    // 🆕 ОБНОВЛЯЕМ totalExperience СРАЗУ
+    const oldTotalExp = totalExperience;
+    totalExperience += earnedExp;
     
-    // Обновляем данные ученика в localStorage (временное значение)
+    console.log(`=== ИТОГО ===`);
+    console.log(`Получено опыта: ${earnedExp}`);
+    console.log(`Причины: ${reasons.join(', ')}`);
+    console.log(`Старый опыт: ${oldTotalExp} -> Новый: ${totalExperience}`);
+    console.log("===============");
+    
+    // Обновляем данные ученика в localStorage
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
     if (studentData) {
-        // Временное значение для отображения
-        studentData.tempExperience = (studentData.experience || 0) + earnedExp;
+        studentData.experience = totalExperience;
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
     }
     
     // Добавляем уровень в пройденные
     completedLevels.push(levelKey);
     localStorage.setItem(completedKey, JSON.stringify(completedLevels));
-    
-    console.log(`=== ИТОГО ===`);
-    console.log(`Получено опыта: ${earnedExp}`);
-    console.log(`Причины: ${reasons.join(', ')}`);
-    console.log(`Новый общий опыт (временный): ${(totalExperience || 0) + earnedExp}`);
-    console.log("===============");
     
     return earnedExp;
 }
@@ -467,11 +469,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             return true;
         }
         
-        // Определяем новый общий опыт
-        const newTotalExp = action === 'login' ? (studentData.experience || 0) : (studentData.experience || 0) + earnedExp;
-        
-        // 🆕 ВАЖНО: Обновляем глобальную переменную totalExperience
-        totalExperience = newTotalExp;
+        const currentStudentExp = totalExperience;
         
         const partKey = `1.${currentPart}`;
         
@@ -496,7 +494,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             currentPart: partKey,
             currentLevel: currentLevel + 1,
             earnedExp: earnedExp,
-            totalExperience: totalExperience,
+            totalExperience: currentStudentExp,
             lessonNumber: 1,
             partNumber: currentPart,
             levelKey: `${partKey}.${currentLevel + 1}`,
