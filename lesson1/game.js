@@ -100,26 +100,26 @@ function calculateExperience() {
         }
     }
     
-    // 🆕 ОБНОВЛЯЕМ totalExperience СРАЗУ
-    const oldTotalExp = totalExperience;
-    totalExperience += earnedExp;
+    // 🆕 ВАЖНО: НЕ прибавляем к totalExperience здесь!
+    // Только возвращаем earnedExp для последующего добавления
     
-    console.log(`=== ИТОГО ===`);
-    console.log(`Получено опыта: ${earnedExp}`);
-    console.log(`Причины: ${reasons.join(', ')}`);
-    console.log(`Старый опыт: ${oldTotalExp} -> Новый: ${totalExperience}`);
-    console.log("===============");
-    
-    // Обновляем данные ученика в localStorage
+    // Обновляем данные ученика в localStorage (ВРЕМЕННОЕ значение для отображения)
     const studentData = JSON.parse(localStorage.getItem('currentStudent') || '{}');
     if (studentData) {
-        studentData.experience = totalExperience;
+        // Временное значение для отображения
+        studentData.tempExperience = (studentData.experience || 0) + earnedExp;
         localStorage.setItem('currentStudent', JSON.stringify(studentData));
     }
     
     // Добавляем уровень в пройденные
     completedLevels.push(levelKey);
     localStorage.setItem(completedKey, JSON.stringify(completedLevels));
+    
+    console.log(`=== ИТОГО ===`);
+    console.log(`Получено опыта: ${earnedExp}`);
+    console.log(`Причины: ${reasons.join(', ')}`);
+    console.log(`Новый общий опыт (временный): ${(totalExperience || 0) + earnedExp}`);
+    console.log("===============");
     
     return earnedExp;
 }
@@ -465,15 +465,22 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             return true;
         }
         
-        // Используем глобальную переменную totalExperience, которая уже обновлена
-        const currentStudentExp = totalExperience;
+        // 🆕 ВАЖНО: Определяем новый общий опыт
+        // Для action 'login' берем текущий опыт ученика
+        // Для 'update' добавляем earnedExp к текущему опыту
+        const newTotalExp = action === 'login' 
+            ? (studentData.experience || 0) 
+            : (studentData.experience || 0) + earnedExp;
+        
+        // 🆕 ВАЖНО: Обновляем глобальную переменную totalExperience
+        totalExperience = newTotalExp;
         
         const partKey = `1.${currentPart}`;
         
         // Обновляем данные ученика
         studentData.currentPart = partKey;
         studentData.currentLevel = currentLevel + 1;
-        studentData.experience = currentStudentExp;
+        studentData.experience = totalExperience;  // Используем обновленный опыт
         studentData.lastLogin = new Date().toISOString();
         
         // Сохраняем обновленные данные
@@ -490,8 +497,8 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
             subgroup: studentData.subgroup,
             currentPart: partKey,
             currentLevel: currentLevel + 1,
-            earnedExp: earnedExp,
-            totalExperience: currentStudentExp,
+            earnedExp: earnedExp, // Сколько опыта получено за этот уровень
+            totalExperience: totalExperience, // Общий опыт после добавления
             lessonNumber: 1,
             partNumber: currentPart,
             levelKey: `${partKey}.${currentLevel + 1}`,
@@ -499,6 +506,7 @@ async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
         };
 
         console.log('Отправляю данные на сервер:', dataToSend);
+        console.log(`[Опыт] Итоговые значения: earnedExp=${earnedExp}, totalExperience=${totalExperience}`);
         
         // Отправляем на сервер
         fetch(GAME_API_URL, {
@@ -528,7 +536,7 @@ async function loadProgress() {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
         if (studentData) {
-            // Загружаем опыт из localStorage (он уже должен быть актуальным)
+            // Используем опыт из данных ученика
             totalExperience = studentData.experience || 0;
             console.log('Опыт загружен из localStorage:', totalExperience);
             
@@ -1094,6 +1102,8 @@ function showWinModal(isPartComplete = false) {
     // Расчет опыта при завершении уровня
     const earnedExp = calculateExperience();
     
+    // 🆕 ВАЖНО: Обновляем totalExperience на основе earnedExp
+    // НЕ добавляем снова, так как это уже сделано в saveProgressToGoogleSheets
     const expMessage = isPartComplete 
         ? `<br><br>🎖️ <strong>Общий опыт за занятие: ${totalExperience}</strong>`
         : `<br><br>⭐ Получено опыта: +${earnedExp} (всего: ${totalExperience})`;
