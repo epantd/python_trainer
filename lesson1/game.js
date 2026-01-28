@@ -456,7 +456,7 @@ function checkAllImagesLoaded() {
     }
 }
 
-async function saveProgressToGoogleSheets(action = 'update', earnedExp = 0) {
+async function saveProgressToGoogleSheets(action = 'save', earnedExp = 0) {
     try {
         const studentData = JSON.parse(localStorage.getItem('currentStudent'));
 
