@@ -1848,6 +1848,10 @@ function evaluateCondition(conditionText) {
         if (stringLiteralDouble !== undefined) {
             return `'${stringLiteralDouble}'`;
         }
+        // 🛑 НЕ ОБРАБАТЫВАЕМ and И or КАК ПЕРЕМЕННЫЕ
+        if (variableName === 'and' || variableName === 'or') {
+            return variableName; // вернём as is, позже заменится на && или ||
+        }
         
         if (pythonVariables.hasOwnProperty(variableName)) {
             // 🛑 УНИВЕРСАЛЬНОЕ ИСПРАВЛЕНИЕ:
