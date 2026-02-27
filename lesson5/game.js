@@ -1799,150 +1799,181 @@ function handlePrintForEntity(line) {
     if (!match) return true;
 
     let content = match[1].trim();
-    let printedText;
 
-    // --- 1. ВЫЧИСЛЕНИЕ ЗНАЧЕНИЯ ---
-    const isSimpleString = (content.startsWith('"') && content.endsWith('"')) || (content.startsWith("'") && content.endsWith("'"));
+    // Вспомогательная функция для разделения аргументов с учётом кавычек и скобок
+    function splitArguments(str) {
+        const args = [];
+        let current = '';
+        let depth = 0;
+        let inQuote = false;
+        let quoteChar = null;
 
-    if (isSimpleString) {
-        printedText = content.slice(1, -1);
-    } else {
-        try {
-            // 🔴 ИСПРАВЛЕНИЕ: Новая функция для обработки выражений
-            const evaluateExpression = (expr) => {
-                // Сначала заменяем переменные на их значения
-                let processed = expr.replace(/'([^']*)'|"([^"]*)"|([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, stringLiteralSingle, stringLiteralDouble, variableName) => {
-                    if (stringLiteralSingle !== undefined) return `'${stringLiteralSingle}'`;
-                    if (stringLiteralDouble !== undefined) return `'${stringLiteralDouble}'`;
-                    if (pythonVariables.hasOwnProperty(variableName)) {
-                        const varValue = pythonVariables[variableName];
-                        return typeof varValue === 'string' ? `'${varValue}'` : varValue;
-                    }
-                    throw new Error(`Переменная ${variableName} не определена.`);
-                });
+        for (let i = 0; i < str.length; i++) {
+            const ch = str[i];
 
-                console.log(`[EVAL_EXPR] After variable substitution: ${processed}`);
+            if (!inQuote && (ch === '"' || ch === "'")) {
+                inQuote = true;
+                quoteChar = ch;
+                current += ch;
+                continue;
+            }
+            if (inQuote && ch === quoteChar) {
+                inQuote = false;
+                quoteChar = null;
+                current += ch;
+                continue;
+            }
 
-                // Обрабатываем умножение строки на число
-                const processStringMultiplication = (expr) => {
-                    const stringMultiplyPattern = /(['"])(.*?)\1\s*\*\s*([^+\-*/().,\s][^+\-*/).,\s]*)|([^+\-*/().,\s][^+\-*/).,\s]*)\s*\*\s*(['"])(.*?)\5/g;
-                    let result = expr;
-                    let match;
-                    
-                    while ((match = stringMultiplyPattern.exec(expr)) !== null) {
-                        let str, numExpr;
-                        
-                        if (match[1]) { // "строка" * число
-                            str = match[2];
-                            numExpr = match[3];
-                        } else { // число * "строка"
-                            str = match[6];
-                            numExpr = match[4];
+            if (!inQuote) {
+                if (ch === '(') {
+                    depth++;
+                } else if (ch === ')') {
+                    depth--;
+                } else if (ch === ',' && depth === 0) {
+                    args.push(current.trim());
+                    current = '';
+                    continue;
+                }
+            }
+            current += ch;
+        }
+        if (current.trim() !== '') {
+            args.push(current.trim());
+        }
+        return args;
+    }
+
+    const args = splitArguments(content);
+    let printedParts = [];
+
+    // Обрабатываем каждый аргумент отдельно
+    for (let arg of args) {
+        let value;
+
+        // Простая строка в кавычках
+        const isSimpleString = (arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"));
+        if (isSimpleString) {
+            value = arg.slice(1, -1);
+        } else {
+            // Вычисляем выражение (переменная, число, операция)
+            try {
+                const evaluateExpression = (expr) => {
+                    // Замена переменных на значения
+                    let processed = expr.replace(/'([^']*)'|"([^"]*)"|([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, stringLiteralSingle, stringLiteralDouble, variableName) => {
+                        if (stringLiteralSingle !== undefined) return `'${stringLiteralSingle}'`;
+                        if (stringLiteralDouble !== undefined) return `'${stringLiteralDouble}'`;
+                        if (pythonVariables.hasOwnProperty(variableName)) {
+                            const varValue = pythonVariables[variableName];
+                            return typeof varValue === 'string' ? `'${varValue}'` : varValue;
                         }
-                        
-                        // Вычисляем числовое выражение
-                        let num;
-                        try {
-                            // Заменяем переменные в числовом выражении
-                            const processedNumExpr = numExpr.replace(/([a-zA-Z_]\w*)/g, (m, varName) => {
-                                if (pythonVariables.hasOwnProperty(varName)) {
-                                    const val = pythonVariables[varName];
-                                    return typeof val === 'string' ? `'${val}'` : val;
-                                }
-                                return m;
-                            });
-                            num = eval(processedNumExpr);
-                        } catch (e) {
-                            throw new Error(`Не удалось вычислить числовое выражение: ${numExpr}`);
-                        }
-                        
-                        if (typeof num === 'number' && !isNaN(num)) {
-                            const repeated = str.repeat(num);
-                            result = result.replace(match[0], `'${repeated}'`);
-                        } else {
-                            throw new Error(`Результат не является числом: ${num}`);
-                        }
-                    }
-                    
-                    return result;
-                };
+                        throw new Error(`Переменная ${variableName} не определена.`);
+                    });
 
-                // Обрабатываем умножение строк
-                processed = processStringMultiplication(processed);
-                console.log(`[EVAL_EXPR] After string multiplication: ${processed}`);
+                    // Обработка умножения строки на число
+                    const processStringMultiplication = (expr) => {
+                        const stringMultiplyPattern = /(['"])(.*?)\1\s*\*\s*([^+\-*/().,\s][^+\-*/).,\s]*)|([^+\-*/().,\s][^+\-*/).,\s]*)\s*\*\s*(['"])(.*?)\5/g;
+                        let result = expr;
+                        let match;
 
-                // Теперь вычисляем все выражение
-                // Сначала обрабатываем сложение (конкатенацию) строк
-                const parts = processed.split(/\s*\+\s*/);
-                if (parts.length > 1) {
-                    let result = '';
-                    for (let part of parts) {
-                        if ((part.startsWith("'") && part.endsWith("'")) || 
-                            (part.startsWith('"') && part.endsWith('"'))) {
-                            result += part.slice(1, -1);
-                        } else {
-                            // Пробуем вычислить как число или выражение
+                        while ((match = stringMultiplyPattern.exec(expr)) !== null) {
+                            let str, numExpr;
+
+                            if (match[1]) { // "строка" * число
+                                str = match[2];
+                                numExpr = match[3];
+                            } else { // число * "строка"
+                                str = match[6];
+                                numExpr = match[4];
+                            }
+
+                            let num;
                             try {
-                                const value = eval(part);
-                                result += String(value);
+                                const processedNumExpr = numExpr.replace(/([a-zA-Z_]\w*)/g, (m, varName) => {
+                                    if (pythonVariables.hasOwnProperty(varName)) {
+                                        const val = pythonVariables[varName];
+                                        return typeof val === 'string' ? `'${val}'` : val;
+                                    }
+                                    return m;
+                                });
+                                num = eval(processedNumExpr);
                             } catch (e) {
-                                result += part;
+                                throw new Error(`Не удалось вычислить числовое выражение: ${numExpr}`);
+                            }
+
+                            if (typeof num === 'number' && !isNaN(num)) {
+                                const repeated = str.repeat(num);
+                                result = result.replace(match[0], `'${repeated}'`);
+                            } else {
+                                throw new Error(`Результат не является числом: ${num}`);
                             }
                         }
+                        return result;
+                    };
+
+                    processed = processStringMultiplication(processed);
+
+                    // Обработка сложения (конкатенации) строк
+                    const parts = processed.split(/\s*\+\s*/);
+                    if (parts.length > 1) {
+                        let result = '';
+                        for (let part of parts) {
+                            if ((part.startsWith("'") && part.endsWith("'")) || 
+                                (part.startsWith('"') && part.endsWith('"'))) {
+                                result += part.slice(1, -1);
+                            } else {
+                                try {
+                                    const val = eval(part);
+                                    result += String(val);
+                                } catch (e) {
+                                    result += part;
+                                }
+                            }
+                        }
+                        return result;
+                    } else {
+                        const val = eval(processed.replace(/and/g, '&&')
+                            .replace(/or/g, '||')
+                            .replace(/not/g, '!')
+                            .replace(/True/g, 'true')
+                            .replace(/False/g, 'false'));
+                        return typeof val === 'string' ? val : String(val);
                     }
-                    return result;
-                } else {
-                    // Если нет сложения, просто вычисляем выражение
-                    const value = eval(processed.replace(/and/g, '&&')
-                        .replace(/or/g, '||')
-                        .replace(/not/g, '!')
-                        .replace(/True/g, 'true')
-                        .replace(/False/g, 'false'));
-                    
-                    return typeof value === 'string' ? value : String(value);
-                }
-            };
-            
-            printedText = evaluateExpression(content);
-            
-        } catch (error) {
-            console.log(`[ERROR IN PRINT EVAL] ${error.message}`);
-            consoleOutput += `[Ошибка: print] ${error.message}\n`;
-            updateOutputDisplay();
-            messageElement.textContent = `Ошибка в print(): ${error.message}`;
-            return false;
+                };
+
+                value = evaluateExpression(arg);
+            } catch (error) {
+                console.log(`[ERROR IN PRINT EVAL] ${error.message}`);
+                consoleOutput += `[Ошибка: print] ${error.message}\n`;
+                updateOutputDisplay();
+                messageElement.textContent = `Ошибка в print(): ${error.message}`;
+                return false;
+            }
         }
+        printedParts.push(String(value));
     }
-    
+
+    const printedText = printedParts.join(' '); // объединяем через пробел, как в Python
     lastPrintedResult = printedText;
     consoleOutput += `[Консоль] ${printedText}\n`;
     updateOutputDisplay();
-    
-    // 🛑 СБОР ВСЕГО ВЫВОДА В БУФЕР ДЛЯ ФИНАЛЬНОЙ ПРОВЕРКИ КОМПЬЮТЕРА
-    window.consoleOutputBuffer += String(printedText) + "\n"; 
-    
+
+    // Собираем вывод в буфер для финальной проверки
+    window.consoleOutputBuffer += String(printedText) + "\n";
+
     const normalizedPrintedText = String(printedText).toLowerCase().trim();
     console.log(`[DEBUG] Normalized Print Text for Interaction: "${normalizedPrintedText}"`);
 
-    // --- 2. ИНТЕРАКЦИЯ С ТЕРМИНАЛОМ ---
+    // --- Взаимодействие с Зодчим (terminal) ---
     const terminalEntity = currentLevelData.entities.find(e => e.name_en === 'terminal');
     if (terminalEntity && checkCollision(playerX, playerY, terminalEntity)) {
         if (normalizedPrintedText === 'план постройки') {
-            const variableSource = currentLevelData.levelVariable;
-            const levelId = currentLevelData.id;
-            if ('1' == '1') {
-                 // 🛑 ВЫВОД В КОНСОЛЬ Терминала: Переменные уже загружены
-            consoleOutput += `\n>Данные от Зодчего получены.\n Используй █ если нужны блоки для постройки.\n`; 
-            
-            // 🔴 ДОБАВЛЯЕМ: Загружаем переменную уровня в pythonVariables
+            consoleOutput += `\n>Данные от Зодчего получены.\n Используй █ если нужны блоки для постройки.\n`;
             const variableName = currentLevelData.levelVariable;
             const variableValue = currentLevelData.levelVariableValue;
             pythonVariables[variableName] = variableValue;
             consoleOutput += `> Переменная ${variableName}\n`;
-            
             updateOutputDisplay();
-            messageElement.textContent = `Данные от Зодчего получены. Переменная ${variableName}`; 
-            }
+            messageElement.textContent = `Данные от Зодчего получены. Переменная ${variableName}`;
             return true;
         } else {
             messageElement.textContent = `Зодчий ждет команду "План постройки".`;
@@ -1950,11 +1981,10 @@ function handlePrintForEntity(line) {
         }
     }
 
-    // --- 3. ИНТЕРАКЦИЯ С МЕНЕДЖЕРОМ ПАРОЛЕЙ (SOURCE) ---
+    // --- Взаимодействие с Хранителем (keeper) ---
     const sourceEntity = currentLevelData.entities.find(e => e.name_en === 'keeper');
     if (sourceEntity && checkCollision(playerX, playerY, sourceEntity)) {
         if (normalizedPrintedText === 'спросить') {
-            // Запускаем проверку знаний
             awaitingKeeperPassword = true;
             showRandomQuestion();
             return true;
