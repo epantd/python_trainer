@@ -306,6 +306,21 @@
             background: #27ae60;
         }
 
+        /* ДОБАВЛЕНО: стили для кнопок быстрой покупки */
+        .grade-btn {
+            padding: 5px 8px;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+        .grade-btn.grade5 { background: #f39c12; }
+        .grade-btn.grade4 { background: #2ecc71; }
+        .grade-btn.grade3 { background: #3498db; }
+        .grade-btn.grade2 { background: #e74c3c; }
+
         @media (max-width: 768px) {
             .controls {
                 grid-template-columns: 1fr;
@@ -317,21 +332,6 @@
             
             .teacher-panel {
                 padding: 20px;
-            }
-            .add-exp-btn {
-                background: #2ecc71;
-                color: white;
-                border: none;
-                padding: 5px 10px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 0.9em;
-                margin-left: 5px;
-                transition: background 0.3s;
-            }
-            
-            .add-exp-btn:hover {
-                background: #27ae60;
             }
         }
     </style>
@@ -457,13 +457,13 @@
     </div>
 
     <script>
-        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbyJVGAzGyeIl8QixDiZ70tyr3MYJsIJURy7hSL-UPE6sS8lCNPvMiPs4FI53hKIgY4Gcg/exec';
-        const TEACHER_PASSWORD = 'teacher'; // Пароль для учителя
+        // ВАЖНО: используйте тот же URL, что и в shop.html
+        const SHOP_API_URL = 'https://script.google.com/macros/s/AKfycbxwiH3w5RqJEl_CPMfWs72Xi91Z1hl6pDCNOSZ42Ljhf12c6Q0qT0ApiW2PSwMksZym4Q/exec';
+        const TEACHER_PASSWORD = 'teacher'; // Пароль для входа в панель
 
         let allStudents = [];
         let filteredStudents = [];
 
-        // Проверяем, есть ли сохраненный пароль в sessionStorage
         document.addEventListener('DOMContentLoaded', function() {
             const isTeacherLoggedIn = sessionStorage.getItem('teacherLoggedIn');
             if (isTeacherLoggedIn === 'true') {
@@ -471,7 +471,6 @@
             }
         });
 
-        // Обработчик формы входа для учителя
         document.getElementById('teacherLoginForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -490,19 +489,16 @@
                 return;
             }
 
-            // Сохраняем статус входа
             sessionStorage.setItem('teacherLoggedIn', 'true');
             enterTeacherPanel();
         });
 
-        // Вход в панель учителя
         function enterTeacherPanel() {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('teacherPanel').style.display = 'block';
             loadAllStudents();
         }
 
-        // Загрузка всех учеников
         async function loadAllStudents() {
             try {
                 const response = await fetch(SHOP_API_URL, {
@@ -532,7 +528,6 @@
             }
         }
 
-        // Обновление статистики
         function updateStats() {
             const totalStudents = allStudents.length;
             const lessonsExp = allStudents.reduce((sum, student) => sum + (student.lessonsExp || 0), 0);
@@ -548,7 +543,6 @@
             document.getElementById('totalPurchases').textContent = totalPurchases;
         }
 
-        // Отображение учеников в таблице
         function displayStudents() {
             const tbody = document.getElementById('studentsTableBody');
             tbody.innerHTML = '';
@@ -567,33 +561,17 @@
             filteredStudents.forEach(student => {
                 const row = tbody.insertRow();
                 
-                // Фамилия
-                const lastNameCell = row.insertCell();
-                lastNameCell.textContent = student.lastName || '';
-                
-                // Имя
-                const firstNameCell = row.insertCell();
-                firstNameCell.textContent = student.firstName || '';
-                
-                // Класс
-                const gradeCell = row.insertCell();
-                gradeCell.textContent = student.grade || '';
-                
-                // Буква класса
-                const classLetterCell = row.insertCell();
-                classLetterCell.textContent = student.classLetter || '';
-                
-                // Подгруппа
-                const subgroupCell = row.insertCell();
-                subgroupCell.textContent = student.subgroup || '';
+                row.insertCell().textContent = student.lastName || '';
+                row.insertCell().textContent = student.firstName || '';
+                row.insertCell().textContent = student.grade || '';
+                row.insertCell().textContent = student.classLetter || '';
+                row.insertCell().textContent = student.subgroup || '';
                 
                 // Опыт из уроков
-                const lessonsExpCell = row.insertCell();
-                lessonsExpCell.innerHTML = `<span class="exp-badge">${student.lessonsExp || 0} XP</span>`;
+                row.insertCell().innerHTML = `<span class="exp-badge">${student.lessonsExp || 0} XP</span>`;
                 
-                // Опыт от учителя
-                const teacherExpCell = row.insertCell();
-                teacherExpCell.innerHTML = `
+                // Опыт от учителя с кнопкой +
+                row.insertCell().innerHTML = `
                     <span class="exp-badge" style="background: #f39c12;">${student.teacherExp || 0} XP</span>
                     <button onclick="addExpPrompt('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}')" 
                             style="margin-left: 5px; padding: 2px 8px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em;">
@@ -601,25 +579,37 @@
                     </button>
                 `;
                 
-                // Общий опыт
-                const totalExpCell = row.insertCell();
-                totalExpCell.innerHTML = `<span class="exp-badge">${student.totalExp || 0} XP</span>`;
+                row.insertCell().innerHTML = `<span class="exp-badge">${student.totalExp || 0} XP</span>`;
+                row.insertCell().innerHTML = `<span class="exp-badge spent">${student.spentExp || 0} XP</span>`;
+                row.insertCell().innerHTML = `<span class="exp-badge">${student.availableExp || 0} XP</span>`;
                 
-                // Потрачено опыта
-                const spentExpCell = row.insertCell();
-                spentExpCell.innerHTML = `<span class="exp-badge spent">${student.spentExp || 0} XP</span>`;
-                
-                // Доступно опыта
-                const availableExpCell = row.insertCell();
-                availableExpCell.innerHTML = `<span class="exp-badge">${student.availableExp || 0} XP</span>`;
-                
-                // Действия
+                // Действия (ДОБАВЛЕНО много кнопок)
                 const actionsCell = row.insertCell();
                 actionsCell.innerHTML = `
-                    <button onclick="addExpToStudent('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}')" 
-                            class="back-btn" style="padding: 5px 10px; font-size: 0.9em; background: #2ecc71;">
-                        Начислить опыт
-                    </button>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <button onclick="addExpToStudent('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}')" 
+                                class="back-btn" style="padding: 5px 10px; font-size: 0.9em; background: #2ecc71;">
+                            Начислить опыт
+                        </button>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button onclick="teacherBuyGrade('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}', 1)" 
+                                    class="grade-btn grade5" title="Купить оценку 5 (40 XP)">
+                                5 (40)
+                            </button>
+                            <button onclick="teacherBuyGrade('${student.lastName}', '${student.firstName}', 'student.grade}', '${student.classLetter}', 2)" 
+                                    class="grade-btn grade4" title="Купить оценку 4 (30 XP)">
+                                4 (30)
+                            </button>
+                            <button onclick="teacherBuyGrade('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}', 3)" 
+                                    class="grade-btn grade3" title="Купить оценку 3 (20 XP)">
+                                3 (20)
+                            </button>
+                            <button onclick="teacherAssignTwo('${student.lastName}', '${student.firstName}', '${student.grade}', '${student.classLetter}')" 
+                                    class="grade-btn grade2" title="Выставить двойку (0 XP)">
+                                2 (0)
+                            </button>
+                        </div>
+                    </div>
                 `;
                 
                 // Покупки
@@ -649,7 +639,7 @@
             });
         }
 
-        // Функция для начисления опыта
+        // Начисление опыта (старая функция, оставляем)
         async function addExpToStudent(lastName, firstName, grade, classLetter) {
             const amount = prompt(`Введите количество опыта для начисления ученику ${lastName} ${firstName}:`, "10");
             
@@ -679,7 +669,7 @@
         
                 if (result.success) {
                     alert(result.message);
-                    loadAllStudents(); // Обновляем данные
+                    loadAllStudents();
                 } else {
                     alert('Ошибка: ' + result.error);
                 }
@@ -688,31 +678,79 @@
             }
         }
         
-        // Альтернативная функция с кнопками +10, +20, +50
         function addExpPrompt(lastName, firstName, grade, classLetter) {
             const amount = prompt(`Быстрое начисление для ${lastName} ${firstName}:\nВведите количество XP или выберите:\n1. 10 XP\n2. 20 XP\n3. 50 XP\n4. 100 XP`, "10");
-            
             if (amount) {
                 addExpToStudent(lastName, firstName, grade, classLetter, amount);
             }
         }
-                
 
-        // Настройка фильтров
+        // ДОБАВЛЕНО: покупка оценки учителем (разрешает отрицательный опыт)
+        async function teacherBuyGrade(lastName, firstName, grade, classLetter, itemId) {
+            if (!confirm(`Купить оценку (ID ${itemId}) для ученика ${lastName} ${firstName}? Это может увести опыт в минус.`)) return;
+            
+            try {
+                const response = await fetch(SHOP_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'teacherPurchase',
+                        password: 'teacher123',
+                        lastName, firstName, grade, classLetter,
+                        itemId: parseInt(itemId),
+                        allowNegative: true
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Оценка куплена!');
+                    refreshData();
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                alert('Ошибка подключения: ' + error);
+            }
+        }
+
+        // ДОБАВЛЕНО: выставление двойки (специальный товар)
+        async function teacherAssignTwo(lastName, firstName, grade, classLetter) {
+            if (!confirm(`Выставить двойку ученику ${lastName} ${firstName}?`)) return;
+            
+            try {
+                const response = await fetch(SHOP_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'assignTwo',
+                        password: 'teacher123',
+                        lastName, firstName, grade, classLetter
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Двойка выставлена!');
+                    refreshData();
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                alert('Ошибка подключения: ' + error);
+            }
+        }
+
         function setupFilters() {
             const searchInput = document.getElementById('searchLastName');
             const gradeFilter = document.getElementById('filterGrade');
             const classLetterFilter = document.getElementById('filterClassLetter');
             const subgroupFilter = document.getElementById('filterSubgroup');
 
-            // Обработчики событий для фильтров
             searchInput.addEventListener('input', applyFilters);
             gradeFilter.addEventListener('change', applyFilters);
             classLetterFilter.addEventListener('change', applyFilters);
             subgroupFilter.addEventListener('change', applyFilters);
         }
 
-        // Применение фильтров
         function applyFilters() {
             const searchText = document.getElementById('searchLastName').value.toLowerCase();
             const selectedGrade = document.getElementById('filterGrade').value;
@@ -720,17 +758,10 @@
             const selectedSubgroup = document.getElementById('filterSubgroup').value;
 
             filteredStudents = allStudents.filter(student => {
-                // Поиск по фамилии
                 const lastNameMatch = !searchText || 
                     (student.lastName && student.lastName.toLowerCase().includes(searchText));
-                
-                // Фильтр по классу
                 const gradeMatch = !selectedGrade || student.grade == selectedGrade;
-                
-                // Фильтр по букве класса
                 const classLetterMatch = !selectedClassLetter || student.classLetter == selectedClassLetter;
-                
-                // Фильтр по подгруппе
                 const subgroupMatch = !selectedSubgroup || student.subgroup == selectedSubgroup;
                 
                 return lastNameMatch && gradeMatch && classLetterMatch && subgroupMatch;
@@ -739,12 +770,10 @@
             displayStudents();
         }
 
-        // Обновление данных
         function refreshData() {
             loadAllStudents();
         }
 
-        // Выход из панели учителя
         function logoutTeacher() {
             sessionStorage.removeItem('teacherLoggedIn');
             document.getElementById('teacherPanel').style.display = 'none';
@@ -752,7 +781,6 @@
             document.getElementById('teacherLoginForm').reset();
         }
 
-        // Очистка сообщений об ошибке при вводе
         document.getElementById('teacherPassword').addEventListener('input', function() {
             document.getElementById('teacherLoginError').style.display = 'none';
         });
