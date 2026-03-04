@@ -135,7 +135,6 @@
             padding: 10px 5px;
         }
 
-        /* Обычные показатели опыта (уменьшены) */
         .exp-item.regular-exp {
             flex: 1;
             min-width: 90px;
@@ -155,7 +154,6 @@
             opacity: 0.8;
         }
 
-        /* Выделенный доступный опыт */
         .exp-item.available-exp {
             flex: 1.5;
             min-width: 140px;
@@ -183,7 +181,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Счетчик оценок */
         .exp-item.grades-count {
             flex: 1;
             min-width: 110px;
@@ -377,7 +374,6 @@
             background: #6c7a7d;
         }
 
-        /* Новый блок с информацией о минимальных покупках */
         .min-purchases-warning {
             background: linear-gradient(135deg, #fff3cd, #ffeaa7);
             border: 2px solid #ffc107;
@@ -413,7 +409,6 @@
             background: #27ae60;
         }
 
-        /* Подсказка над блоком опыта */
         .exp-focus-note {
             text-align: center;
             margin-bottom: 10px;
@@ -507,7 +502,6 @@
                 </div>
                 
                 <div class="input-group">
-                    <!-- Пустая ячейка для выравнивания -->
                     <div style="height: 40px;"></div>
                 </div>
             </div>
@@ -535,7 +529,6 @@
             </div>
         </div>
 
-        <!-- Подсказка -->
         <div class="exp-focus-note">
             Самый важный показатель: <strong>Доступный опыт</strong> — именно его вы можете потратить на оценки!
         </div>
@@ -694,19 +687,16 @@
 
         // Вход в магазин
         function enterShop(student) {
-            // Убедимся, что данные ученика валидны
             if (!student) {
                 console.error('Нет данных ученика для входа в магазин');
                 return;
             }
             
-            // Обновляем глобальную переменную
             currentStudent = student;
             
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('shopSection').style.display = 'block';
             
-            // Обновляем отображение информации об ученике
             document.getElementById('studentInfo').textContent = `Ученик: ${student.firstName} ${student.lastName}`;
             document.getElementById('currentStudentName').textContent = `${student.firstName} ${student.lastName}`;
             
@@ -723,18 +713,23 @@
             document.getElementById('teacherExpValue').textContent = student.teacherExp;
             document.getElementById('totalExpValue').textContent = student.totalExp;
             document.getElementById('spentExpValue').textContent = student.spentExp;
-            document.getElementById('availableExpValue').textContent = student.availableExp;
             
-            // Считаем количество купленных оценок
+            const availableSpan = document.getElementById('availableExpValue');
+            availableSpan.textContent = student.availableExp;
+            // Подсветка отрицательного опыта (ДОБАВЛЕНО)
+            if (student.availableExp < 0) {
+                availableSpan.style.color = '#e74c3c';
+            } else {
+                availableSpan.style.color = ''; // сброс к стилю CSS
+            }
+            
+            // Считаем количество купленных оценок (включая двойки)
             const gradeItems = student.purchasedItems.filter(item => 
                 item.name && item.name.includes('Оценка')
             );
             const gradesCount = gradeItems.length;
             
-            // Обновляем счетчик оценок
             document.getElementById('gradesCountValue').textContent = `${gradesCount}/5`;
-            
-            // Обновляем прогресс в предупреждении
             document.getElementById('gradesProgress').textContent = `${gradesCount} из 5`;
             
             const gradesStatus = document.getElementById('gradesStatus');
@@ -746,14 +741,11 @@
                 gradesStatus.className = 'grades-count';
             }
         
-            // Обновляем список покупок
             updatePurchasesList(student.purchasedItems);
         }
 
         // Загрузка товаров магазина
-        // Загрузка товаров магазина
         async function loadShopItems() {
-            // Проверяем, что ученик авторизован
             if (!currentStudent) {
                 console.log('Нет текущего ученика для загрузки товаров');
                 return;
@@ -784,9 +776,7 @@
         }
 
         // Отображение товаров (оценок)
-        // Отображение товаров (оценок)
         function displayShopItems(items) {
-            // Проверка currentStudent перед отображением
             if (!currentStudent) {
                 console.error('currentStudent не определен при отображении товаров');
                 return;
@@ -800,7 +790,6 @@
                 item.name && item.name.includes('Оценка')
             );
         
-            // Если нет оценок, создаем их по умолчанию
             if (gradeItems.length === 0) {
                 const defaultGrades = [
                     { id: 1, name: "Оценка 5", price: 40, description: "Отличная оценка за 40 опыта. Минимум 5 оценок в четверти!", type: "grade" },
@@ -814,9 +803,7 @@
         }
 
         // Создание элемента оценки
-        // Создание элемента оценки
         function createGradeItem(item, container) {
-            // Безопасная проверка свойств currentStudent
             if (!currentStudent) {
                 console.error('currentStudent не определен в createGradeItem');
                 return;
@@ -831,10 +818,9 @@
             const canAfford = availableExp >= item.price;
             const gradeNumber = item.name.match(/\d+/)?.[0] || '?';
             
-            // Определяем цвет цены в зависимости от оценки
-            let priceColor = '#2ecc71'; // зеленый по умолчанию
-            if (gradeNumber === '5') priceColor = '#f39c12'; // оранжевый для 5
-            if (gradeNumber === '3') priceColor = '#3498db'; // синий для 3
+            let priceColor = '#2ecc71';
+            if (gradeNumber === '5') priceColor = '#f39c12';
+            if (gradeNumber === '3') priceColor = '#3498db';
             
             const itemElement = document.createElement('div');
             itemElement.className = 'shop-item';
@@ -866,7 +852,6 @@
                 return;
             }
 
-            // Сортируем покупки по дате (новые сверху)
             const sortedPurchases = [...purchases].sort((a, b) => 
                 new Date(b.purchaseDate) - new Date(a.purchaseDate)
             );
@@ -875,11 +860,11 @@
                 const date = purchase.purchaseDate ? new Date(purchase.purchaseDate) : new Date();
                 const formattedDate = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
                 
-                // Определяем цвет в зависимости от оценки
                 let gradeColor = '#2c3e50';
                 if (purchase.name && purchase.name.includes('5')) gradeColor = '#f39c12';
                 if (purchase.name && purchase.name.includes('4')) gradeColor = '#27ae60';
                 if (purchase.name && purchase.name.includes('3')) gradeColor = '#3498db';
+                if (purchase.name && purchase.name.includes('2')) gradeColor = '#e74c3c'; // ДОБАВЛЕНО для двоек
                 
                 return `
                     <div class="purchase-item">
@@ -921,7 +906,6 @@
                 const result = await response.json();
         
                 if (result.success) {
-                    // Обновляем данные ученика
                     currentStudent.lessonsExp = result.lessonsExp;
                     currentStudent.teacherExp = result.teacherExp;
                     currentStudent.totalExp = result.totalExp;
@@ -929,10 +913,8 @@
                     currentStudent.availableExp = result.availableExp;
                     currentStudent.purchasedItems = result.purchasedItems || [];
         
-                    // Сохраняем в localStorage
                     localStorage.setItem('shopStudent', JSON.stringify(currentStudent));
         
-                    // Обновляем интерфейс
                     updateStudentInfo(currentStudent);
                     loadShopItems();
                 }
@@ -969,28 +951,22 @@
                 const result = await response.json();
         
                 if (result.success) {
-                    // Обновляем данные ученика
                     currentStudent.spentExp = result.newSpentExp;
                     currentStudent.availableExp = result.newAvailableExp;
                     currentStudent.purchasedItems = result.purchasedItems;
                     
-                    // Обновляем общий опыт
                     currentStudent.totalExp = currentStudent.lessonsExp + currentStudent.teacherExp;
         
-                    // Сохраняем в localStorage
                     localStorage.setItem('shopStudent', JSON.stringify(currentStudent));
         
-                    // Обновляем интерфейс
                     updateStudentInfo(currentStudent);
                     loadShopItems();
         
-                    // Показываем сообщение
                     const itemName = result.item?.name || 'Товар';
                     successElement.textContent = `Вы успешно купили ${itemName}!`;
                     successElement.style.display = 'block';
                     errorElement.style.display = 'none';
         
-                    // Скрываем сообщение через 3 секунды
                     setTimeout(() => {
                         successElement.style.display = 'none';
                     }, 3000);
@@ -1008,7 +984,6 @@
 
         // Выход из магазина
         function logoutShop() {
-            // Останавливаем таймер обновления
             if (refreshTimer) {
                 clearInterval(refreshTimer);
                 refreshTimer = null;
@@ -1019,11 +994,9 @@
             document.getElementById('shopSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
             
-            // Очищаем форму
             document.getElementById('shopLoginForm').reset();
         }
 
-        // Очистка сообщений при вводе
         document.querySelectorAll('#shopLoginForm input, #shopLoginForm select').forEach(input => {
             input.addEventListener('input', () => {
                 document.getElementById('shopLoginError').style.display = 'none';
