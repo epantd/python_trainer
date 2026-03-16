@@ -19,7 +19,7 @@ body {
     border-radius: 20px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
     padding: 30px;
-    max-width: 800px;
+    max-width: 900px;
     width: 100%;
 }
 
@@ -89,6 +89,7 @@ body {
     color: #34495e;
     margin-bottom: 15px;
     line-height: 1.5;
+    white-space: pre-line;
 }
 
 .options {
@@ -125,6 +126,35 @@ body {
     color: #2c3e50;
     cursor: pointer;
     width: 100%;
+}
+
+.code-area {
+    margin-top: 15px;
+}
+
+.code-area textarea {
+    width: 100%;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    border: 2px solid #ecf0f1;
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 150px;
+    background: #2c3e50;
+    color: #ecf0f1;
+}
+
+.number-input {
+    margin-top: 15px;
+}
+
+.number-input input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #ecf0f1;
+    border-radius: 8px;
+    font-size: 16px;
 }
 
 .quiz-actions {
