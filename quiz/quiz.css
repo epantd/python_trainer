@@ -9,217 +9,189 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
-.quiz-container {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    padding: 30px;
+.container {
     max-width: 900px;
-    width: 100%;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    padding: 30px;
 }
 
-.quiz-header {
+header {
     text-align: center;
     margin-bottom: 30px;
 }
 
-.quiz-header h1 {
-    color: #2c3e50;
-    margin-bottom: 5px;
+header h1 {
+    color: #3498db;
+    margin-bottom: 10px;
 }
 
-.quiz-header p {
+#student-info {
     color: #7f8c8d;
     font-size: 1.1em;
 }
 
-.student-info {
-    margin-top: 15px;
-    font-size: 1.1em;
-    color: #3498db;
-    font-weight: 600;
-}
-
-.experience-info {
-    margin-top: 10px;
-    font-size: 1.2em;
-    color: #27ae60;
+#experience-display {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #2ecc71;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
     font-weight: bold;
 }
 
-.attempt-status {
-    background-color: #f1f9fe;
-    border-left: 5px solid #3498db;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    font-size: 1em;
-}
-
-.question-card {
-    background: #f9f9f9;
-    border-radius: 12px;
+.task {
+    border: 2px solid #ecf0f1;
+    border-radius: 10px;
     padding: 20px;
-    margin-bottom: 25px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    transition: transform 0.2s;
+    margin-bottom: 20px;
+    transition: border-color 0.3s;
 }
 
-.question-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+.task.completed {
+    border-color: #2ecc71;
+    background: #f0fff4;
 }
 
-.question-title {
-    font-size: 1.1em;
-    font-weight: 600;
+.task h3 {
     color: #2c3e50;
-    margin-bottom: 15px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #ecf0f1;
+    margin-bottom: 10px;
 }
 
-.question-text {
-    font-size: 1em;
-    color: #34495e;
+.task-description {
     margin-bottom: 15px;
     line-height: 1.5;
-    white-space: pre-line;
 }
 
-.options {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.task-options {
+    margin: 15px 0;
 }
 
-.option {
-    display: flex;
-    align-items: center;
-    background: white;
-    padding: 10px 15px;
-    border-radius: 8px;
-    border: 1px solid #ecf0f1;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.option:hover {
-    background: #f0f7ff;
-    border-color: #3498db;
-}
-
-.option input[type="radio"] {
-    margin-right: 15px;
-    width: 18px;
-    height: 18px;
+.task-options label {
+    display: block;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 5px;
     cursor: pointer;
 }
 
-.option label {
-    font-size: 0.95em;
-    color: #2c3e50;
-    cursor: pointer;
-    width: 100%;
+.task-options input[type="radio"] {
+    margin-right: 10px;
 }
 
 .code-area {
-    margin-top: 15px;
-}
-
-.code-area textarea {
     width: 100%;
-    padding: 15px;
+    min-height: 150px;
+    padding: 10px;
     font-family: 'Courier New', monospace;
     font-size: 14px;
     border: 2px solid #ecf0f1;
     border-radius: 8px;
+    margin-bottom: 10px;
     resize: vertical;
-    min-height: 150px;
-    background: #2c3e50;
-    color: #ecf0f1;
 }
 
-.number-input {
-    margin-top: 15px;
+.code-area:focus {
+    outline: none;
+    border-color: #3498db;
 }
 
-.number-input input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #ecf0f1;
-    border-radius: 8px;
-    font-size: 16px;
-}
-
-.quiz-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-    flex-wrap: wrap;
-}
-
-.btn-submit, .btn-back {
-    padding: 14px 28px;
+.run-btn, .check-btn {
+    padding: 10px 20px;
     border: none;
-    border-radius: 50px;
-    font-size: 1.1em;
-    font-weight: 600;
+    border-radius: 5px;
     cursor: pointer;
-    transition: all 0.2s;
+    font-weight: 600;
+    transition: 0.2s;
+    margin-right: 10px;
 }
 
-.btn-submit {
-    background: linear-gradient(135deg, #3498db, #2980b9);
+.run-btn {
+    background: #3498db;
     color: white;
-    box-shadow: 0 4px 12px rgba(52,152,219,0.3);
 }
 
-.btn-submit:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(52,152,219,0.4);
+.check-btn {
+    background: #2ecc71;
+    color: white;
 }
 
-.btn-submit:disabled {
-    opacity: 0.5;
+.check-btn:disabled {
+    background: #bdc3c7;
     cursor: not-allowed;
 }
 
-.btn-back {
-    background: #ecf0f1;
-    color: #7f8c8d;
-}
-
-.btn-back:hover {
-    background: #bdc3c7;
-    color: #2c3e50;
-}
-
-.result-message {
-    margin-top: 25px;
-    padding: 15px;
-    border-radius: 10px;
+.actions {
     text-align: center;
-    font-size: 1.1em;
-    background-color: #f8f9fa;
-    border-left: 5px solid #2ecc71;
+    margin-top: 20px;
+}
+
+#finish-test {
+    padding: 15px 40px;
+    background: #9b59b6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#finish-test:enabled:hover {
+    background: #8e44ad;
+    transform: scale(1.05);
+}
+
+.console-panel {
+    margin-top: 30px;
+    border-top: 2px solid #ecf0f1;
+    padding-top: 20px;
+}
+
+#console-output {
+    background: #2c3e50;
+    color: #ecf0f1;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    min-height: 100px;
+    white-space: pre-wrap;
+}
+
+.modal {
     display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
 }
 
-.result-message.show {
-    display: block;
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 400px;
+    text-align: center;
 }
 
-.result-message.success {
-    border-left-color: #2ecc71;
-}
-
-.result-message.error {
-    border-left-color: #e74c3c;
+#close-modal {
+    margin-top: 20px;
+    padding: 10px 30px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
