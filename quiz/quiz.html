@@ -10,22 +10,18 @@
     <div class="quiz-container">
         <header class="quiz-header">
             <h1>🧪 Проверка знаний</h1>
-            <p>Урок 6: Работа со строками и основы Python</p>
             <div class="student-info" id="studentInfo"></div>
-            <div class="experience-info" id="experienceInfo">Опыт: <span id="expValue">0</span></div>
+            <div class="experience-info">Опыт: <span id="expValue">0</span></div>
         </header>
 
         <div id="attemptStatus" class="attempt-status"></div>
 
-        <form id="quizForm">
-            <!-- Вопросы будут сгенерированы динамически через JS -->
-            <div id="questionsContainer"></div>
+        <div id="questionsContainer"></div>
 
-            <div class="quiz-actions">
-                <button type="button" id="submitQuiz" class="btn-submit">Завершить тест и получить опыт</button>
-                <button type="button" id="backToMenu" class="btn-back">← Вернуться в меню</button>
-            </div>
-        </form>
+        <div class="quiz-actions">
+            <button id="submitQuiz" class="btn-submit">Завершить тест и получить опыт</button>
+            <button id="backToMenu" class="btn-back">← Вернуться в меню</button>
+        </div>
 
         <div id="resultMessage" class="result-message"></div>
     </div>
