@@ -3,29 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Проверка знаний – Урок 6</title>
-    <link rel="stylesheet" href="quiz.css">
+    <title>Проверка знаний - Уроки Python</title>
+    <link rel="stylesheet" href="test.css">
 </head>
 <body>
-    <div class="quiz-container">
-        <header class="quiz-header">
-            <h1>🧪 Проверка знаний</h1>
-            <div class="student-info" id="studentInfo"></div>
-            <div class="experience-info">Опыт: <span id="expValue">0</span></div>
+    <div class="container">
+        <header>
+            <h1>Проверка знаний</h1>
+            <p id="student-info"></p>
+            <p id="experience-display">Опыт: 0</p>
         </header>
 
-        <div id="attemptStatus" class="attempt-status"></div>
+        <main id="test-content">
+            <!-- Здесь будут задания -->
+        </main>
 
-        <div id="questionsContainer"></div>
-
-        <div class="quiz-actions">
-            <button id="submitQuiz" class="btn-submit">Завершить тест и получить опыт</button>
-            <button id="backToMenu" class="btn-back">← Вернуться в меню</button>
+        <div class="actions">
+            <button id="finish-test" disabled>Завершить тест</button>
         </div>
 
-        <div id="resultMessage" class="result-message"></div>
+        <!-- Консоль для вывода результатов кода -->
+        <div class="console-panel">
+            <h3>Вывод программы:</h3>
+            <pre id="console-output"></pre>
+        </div>
     </div>
 
-    <script src="quiz.js"></script>
+    <!-- Модальное окно для отображения итога -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <h2>Результат теста</h2>
+            <p id="result-text"></p>
+            <button id="close-modal">Закрыть</button>
+        </div>
+    </div>
+
+    <script src="test.js"></script>
 </body>
 </html>
